@@ -1,0 +1,8 @@
+{
+    "license": "SysinternalsEBPF. Copyright (c) Microsoft Corporation. All rights reserved. This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 2.1 of the License, or (at your option) any later version.  This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.  You should have received a copy of the GNU Lesser General Public License along with this library; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA",
+    "params": [ "parent", "pid", "ppid", "start_time", "cred", "cred_uid", "cred_gid", "cred_euid", "cred_suid", "cred_fsuid", "cred_egid", "cred_sgid", "cred_fsgid", "tty", "comm", "exe_path", "mm_arg_start", "mm_arg_end", "mm_start_code", "mm_end_code", "pwd_path", "path_vfsmount", "path_dentry", "dentry_parent", "dentry_iname", "dentry_name", "dentry_inode", "inode_mode", "inode_atime", "inode_mtime", "inode_ctime", "inode_ouid", "inode_ogid", "mount_mnt", "mount_parent", "mount_mountpoint", "max_fds", "fd_table", "fd_path", "skb_network_header", "skb_head", "skb_data" ],
+    "params_opt": [ "auid", "ses" ],
+    "num_redirects": 4,
+    "deref_end": -1
+}
+

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+rm -rf /opt/sysinternalsEBPF
+rm -f /usr/include/libsysinternalsEBPF.h
+rm -f /usr/lib/libsysinternalsEBPF.so
+

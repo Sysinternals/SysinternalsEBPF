@@ -1,0 +1,10 @@
+Package: sysinternalsebpf
+Version: @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@
+Architecture: amd64
+Maintainer: Sysinternals <syssite@microsoft.com>
+Description: A shared library and code library for making eBPF programs.
+ SysinternalsEBPF is a shared library that provides control over
+ eBPF programs, and an eBPF code library that eBPF programs can include to
+ interact with the library.
+Depends: libc6 (>= 2.26), libelf1 (>= 0.131), libglib2.0-0 (>= 2.12.0), libjson-glib-1.0-0 (>= 0.13.2), zlib1g (>= 1:1.2.3.3)
+Installed-Size: 20553

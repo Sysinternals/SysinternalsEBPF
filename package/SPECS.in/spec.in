@@ -1,0 +1,38 @@
+Name:		sysinternalsebpf
+Version:	@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@
+Release:	@PROJECT_VERSION_TWEAK@%{?dist}
+Summary:	A shared library and code library for making eBPF programs
+
+License:	LGPL2.1/GPL2
+URL:		https://github.com/Sysinternals
+
+%description
+A shared library and code library for making eBPF programs
+
+%install
+rm -rf $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT/%{_bindir}
+cp libsysinternalsEBPFinstaller $RPM_BUILD_ROOT/%{_bindir}
+mkdir -p $RPM_BUILD_ROOT/usr/lib
+cp libsysinternalsEBPF.so $RPM_BUILD_ROOT/usr/lib
+mkdir -p $RPM_BUILD_ROOT/usr/share/man/man3
+cp sysinternalsebpf.3.gz $RPM_BUILD_ROOT/usr/share/man/man3
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+%{_bindir}/libsysinternalsEBPFinstaller
+/usr/lib/libsysinternalsEBPF.so
+/usr/share/man/man3/sysinternalsebpf.3.gz
+
+%post
+%{_bindir}/libsysinternalsEBPFinstaller
+ldconfig
+
+%postun
+rm -rf /opt/sysinternalsEBPF
+rm -f /usr/include/libsysinternalsEBPF.h
+rm -f /usr/lib/libsysinternalsEBPF.so
+ldconfig
+
