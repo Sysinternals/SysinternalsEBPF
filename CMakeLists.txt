@@ -192,7 +192,6 @@ set(PACKED_LIBBPF_SRC_FILES
     )
 
 set(PACKED_BINARY_FILES
-    libsysinternalsEBPF.so
     sysinternalsEBPFmemDump.o
     sysinternalsEBPFrawSock.o
     sysinternalsEBPFoffsets.h
@@ -253,6 +252,12 @@ add_custom_command(OUTPUT "${BIN_FILE}.o"
                    DEPENDS "${PROJECT_BINARY_DIR}/${BIN_FILE}"
                    )
 endforeach(BIN_FILE)
+
+add_custom_command(OUTPUT "libsysinternalsEBPF.so.o"
+                   COMMAND "${LD}" -r -b binary -o "libsysinternalsEBPF.so.o" "libsysinternalsEBPF.so"
+                   COMMENT "Packing libsysinternalsEBPF.so into libsysinternalsEBPF.so.o"
+                   DEPENDS sysinternalsEBPF
+                   )
 
 
 
