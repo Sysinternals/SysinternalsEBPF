@@ -10,7 +10,7 @@ sudo apt install build-essential gcc g++ make cmake libelf-dev llvm clang libzst
 ## Build
 ```
 cd
-git clone *repo*
+git clone https://github.com/Sysinternals/SysinternalsEBPF.git
 cd SysinternalsEBPF
 mkdir build
 cd build
@@ -26,17 +26,20 @@ install sysinternalsEBPF onto a system.
 
 Either:
 ```
-sudo make install
+sudo ./libsysinternalsEBPFinstaller
 ```
 Or:
 ```
-sudo ./libsysinternalsEBPFinstaller
+sudo make install
 ```
 The shared library will be installed to /usr/lib; the header to
 /usr/include; the offsets database and EBPF objects to
 /opt/sysinternalsEBPF.  The libsysinternalsEBPFinstaller binary will also be
 installed in /opt/sysinternalsEBPF (which can be copied to another system and
-run to install sysinternalsEBPF there).
+run to install sysinternalsEBPF there). *Note:* 'sudo make install' will use
+the binary, include, and lib directories that cmake prefers or you have
+overridden, whereas the installer and the packages (see below) use the paths
+specified above.
 
 ## Make Packages
 Packages can be generated with:
@@ -60,10 +63,10 @@ building the getOffsets module in the /opt/sysinternals/getOffsets directory.
 See the README.md in that directory for more information.
 
 ## Manual Page
-A man page for SysinternalsEBPF can be found in the deb directory, and is
+A man page for SysinternalsEBPF can be found in the package directory, and is
 installed by both deb and rpm packages.
 
-Use 'find' on the deb directory to locate it manually.
+Use 'find' on the package directory to locate it manually.
 
 ## License
 SysinternalsEBPF is licensed under LGPL2.1.

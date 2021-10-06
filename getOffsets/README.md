@@ -13,7 +13,7 @@ sudo apt install make gcc
 ```
 
 # Build
-From the /opt/sysinternals/getOffsets directory *on the target machine*:
+From the /opt/sysinternalsEBPF/getOffsets directory *on the target machine*:
 ```
 make
 ```
