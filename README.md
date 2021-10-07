@@ -18,6 +18,19 @@ cmake ..
 make
 ```
 
+## (Build from Sysmon ADO internally)
+*This is only required when cloning from the Sysmon ADO. Most users can ignore
+this.*
+```
+cd
+git clone <Sysmon ADO>
+cd Sysmon/sysinternalsEBPF
+mkdir build
+cd build
+cmake ..
+make
+```
+
 ## Install
 SysinternalsEBPF can be installed in two different ways, either directly via
 CMake (if just built) or by running the libsysinternalsEBPFinstaller binary.
