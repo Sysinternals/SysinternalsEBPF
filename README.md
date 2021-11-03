@@ -4,7 +4,7 @@
 For Ubuntu:
 ```
 sudo apt update
-sudo apt install build-essential gcc g++ make cmake libelf-dev llvm clang libzstd1 git libjson-glib-dev
+sudo apt -y install build-essential gcc g++ make cmake libelf-dev llvm clang libzstd1 git libjson-glib-dev
 ```
 
 ## Build
