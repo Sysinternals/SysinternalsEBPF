@@ -4,6 +4,8 @@ jobs:
   build_SysinternalsEBPF:
     runs-on: ubuntu-latest
     steps:
+    - name: Check out repository code
+      uses: actions/checkout@v2
     - name: Update repos
       run: sudo apt update
     - name: Install dependencies
