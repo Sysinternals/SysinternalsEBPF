@@ -18,3 +18,13 @@ jobs:
     - name: Build Packages
       working-directory: build
       run: make packages
+    - name: Upload Build Artifacts (deb)
+      uses: actions/upload-artifact@v2
+      with:
+        name: sysinternalsebpf.deb
+        path: build/deb/sysinternalsebpf*.deb
+    - name: Upload Build Artifacts (rpm)
+      uses: actions/upload-artifact@v2
+      with:
+        name: sysinternalsebpf.rpm
+        path: build/rpm/sysinternalsebpf*.rpm
