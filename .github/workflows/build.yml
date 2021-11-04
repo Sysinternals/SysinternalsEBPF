@@ -1,0 +1,20 @@
+name: Build SysinternalsEBPF
+on: [push, pull_request]
+jobs:
+  build_sysmon:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Update repos
+      run: sudo apt update
+    - name: Install dependencies
+      run: sudo apt -y install build-essential gcc g++ make cmake libelf-dev llvm clang libzstd1 git libjson-glib-dev
+    - name: Create build dir
+      run: mkdir build
+    - name: Run cmake
+      run: cmake -S . -B build
+    - name: Build
+      working-directory: build
+      run: make
+    - name: Build Packages
+      working-directory: build
+      run: make packages
