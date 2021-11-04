@@ -8,8 +8,6 @@ jobs:
       run: sudo apt update
     - name: Install dependencies
       run: sudo apt -y install build-essential gcc g++ make cmake libelf-dev llvm clang libzstd1 git libjson-glib-dev
-    - name: Create build dir
-      run: mkdir build
     - name: Run cmake
       run: cmake -S . -B build
     - name: Build
