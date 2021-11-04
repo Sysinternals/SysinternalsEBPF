@@ -1,7 +1,7 @@
 name: Build SysinternalsEBPF
 on: [push, pull_request]
 jobs:
-  build_sysmon:
+  build_SysinternalsEBPF:
     runs-on: ubuntu-latest
     steps:
     - name: Update repos
