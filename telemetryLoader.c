@@ -558,7 +558,7 @@ uint32_t combineKernelVersion(uint32_t major, uint32_t minor)
 uint32_t getKernelVersion()
 {
     unsigned int                major = 0, minor = 0;
-    struct utsname              unameStruct = { 0 };
+    struct utsname              unameStruct = {{ 0 }};
 
     if (uname(&unameStruct)){
         fprintf(stderr, "Couldn't find uname, '%s'\n", strerror(errno));
@@ -593,12 +593,13 @@ const ebpfTelemetryObject *getObjectAndPath(char *filepath,
     const char                  *filename = NULL;
     struct stat                 filepathStat;
     const ebpfTelemetryObject   *ebpfObj = NULL;
+    unsigned int                i = 0;
 
     // combine kernel major and minor for easy comparisons
     uint32_t combinedKernelVersion = getKernelVersion();
 
     // find first matching EBPF ELF object
-    for (unsigned int i=0; i<ebpfConfig->numEBPFobjects; i++) {
+    for (i=0; i<ebpfConfig->numEBPFobjects; i++) {
         ebpfObj = &ebpfConfig->objects[i];
         uint32_t minVersion = combineKernelVersion(ebpfObj->minKernel.major, ebpfObj->minKernel.minor);
         uint32_t ltVersion = combineKernelVersion(ebpfObj->lessthanKernel.major, ebpfObj->lessthanKernel.minor);
@@ -615,7 +616,7 @@ const ebpfTelemetryObject *getObjectAndPath(char *filepath,
     }
 
     // discover path
-    for (unsigned int i=0; i<ebpfConfig->numDefaultPaths; i++) {
+    for (i=0; i<ebpfConfig->numDefaultPaths; i++) {
         snprintf(filepath, size, "%s/%s", ebpfConfig->defaultPaths[i], filename);
         if (stat(filepath, &filepathStat) == 0 && S_ISREG(filepathStat.st_mode)) {
             return ebpfObj;
@@ -691,7 +692,8 @@ bool locateTPprogs(const ebpfTelemetryObject *obj)
             // attach this to all active syscall enter tracepoints
             char *programName = strdup(p->program);
             unsigned int programNameLen = strlen(programName);
-            for (unsigned int n=0; n<7; n++) {
+            unsigned int n = 0;
+            for (n=0; n<7; n++) {
                 programName[programNameLen - 1] = '0' + n;
                 if ((s->prog[n] = bpf_object__find_program_by_title(bpfObj, programName)) == NULL) {
                     fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", programName, strerror(errno));
@@ -902,6 +904,7 @@ bool linkTPprogs(const ebpfTelemetryObject *obj,
 
     unsigned int            i;
     char                    tp[SYSCALL_NAME_LEN * 2];
+    unsigned int            syscall = 0;
 
     for (i=0; i<numSysEnter; i++) {
         const ebpfSyscallTPprog *p = &obj->syscallTPenterProgs[i];
@@ -909,7 +912,7 @@ bool linkTPprogs(const ebpfTelemetryObject *obj,
         memset(s->link, 0, sizeof(struct bpf_link *) * s->numLinks);
         if (p->syscall == EBPF_GENERIC_SYSCALL) {
             // attach this to all active syscall enter tracepoints
-            for (unsigned int syscall=0; syscall<=SYSCALL_MAX; syscall++) {
+            for (syscall=0; syscall<=SYSCALL_MAX; syscall++) {
                 if (activeSyscalls[syscall]) {
                     snprintf(tp, SYSCALL_NAME_LEN * 2, "sys_enter_%s", syscallNumToName[syscall].name);
                     unsigned int numArgs = syscallNumToName[syscall].numArgs;
@@ -932,7 +935,7 @@ bool linkTPprogs(const ebpfTelemetryObject *obj,
         memset(s->link, 0, sizeof(struct bpf_link *) * s->numLinks);
         if (p->syscall == EBPF_GENERIC_SYSCALL) {
             // attach this to all active syscall exit tracepoints
-            for (unsigned int syscall=0; syscall<=SYSCALL_MAX; syscall++) {
+            for (syscall=0; syscall<=SYSCALL_MAX; syscall++) {
                 if (activeSyscalls[syscall]) {
                     snprintf(tp, SYSCALL_NAME_LEN * 2, "sys_exit_%s", syscallNumToName[syscall].name);
                     s->link[syscall] = bpf_program__attach_tracepoint(s->prog[0], "syscalls", tp);
