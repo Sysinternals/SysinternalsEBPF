@@ -44,7 +44,7 @@ cmake_minimum_required(VERSION 3.10)
 cmake_policy(SET CMP0048 NEW)
 
 # set the project name - version is MAJOR.MINOR.PATCH.RELEASE - releases start at 1
-project(SysinternalsEBPF VERSION 1.0.0.1)
+project(SysinternalsEBPF VERSION 1.0.1.1)
 configure_file(package/DEBIAN.in/control.in DEBIANcontrol)
 configure_file(package/SPECS.in/spec.in SPECS.spec)
 
