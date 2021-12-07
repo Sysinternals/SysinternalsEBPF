@@ -1438,7 +1438,8 @@ int telemetryStart(
                 fprintf(stderr, "Event timeout occurred (no event for %d seconds). Reloading eBPF...\n", RESTART_TIMEOUT);
                 timeouts = 0;
                 telemetryCloseAll();
-                if (!ebpfStart(ebpfConfig, filepath, procStartTime, eventCb, eventsLostCb, context, argv, fds, true)) {
+                if (ebpfStart(ebpfConfig, filepath, procStartTime, eventCb, eventsLostCb, context, argv, fds, true)
+                        != E_EBPF_SUCCESS) {
                     fprintf(stderr, "ebpfStart failed\n");
                     break;
                 }
