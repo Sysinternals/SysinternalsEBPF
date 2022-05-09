@@ -14,7 +14,7 @@ pr:
 
 jobs:
   - job: "Build_Sysinternalsebpf"
-    pool: "Sysinternalsebpf-Ubuntu-Pool"
+    pool: "Sysmon-Ubuntu-20.04-Pool"
     steps:
     - script: |
         mkdir build && cd build
@@ -23,7 +23,7 @@ jobs:
       displayName: "Build Sysinternalsebpf Binary"
   
   - job: "Sysinternalsebpf_Package_Build"
-    pool: "Sysinternalsebpf-Ubuntu-Pool"
+    pool: "Sysmon-Ubuntu-20.04-Pool"
     condition: not(eq(variables['Build.Reason'], 'PullRequest'))
     dependsOn:
       - "Build_Sysinternalsebpf"
