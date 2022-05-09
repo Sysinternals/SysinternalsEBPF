@@ -40,7 +40,7 @@ jobs:
         mkdir $(Build.SourcesDirectory)/pkgbuild
         cd $(Build.SourcesDirectory)/build
         make packages
-        mv deb/*.deb $(Build.SourcesDirectory)/pkgbuild
+        mv rpm/*.rpm $(Build.SourcesDirectory)/pkgbuild
       displayName: "Build Sysinternalsebpf Package"
     
     - task: CopyFiles@2
