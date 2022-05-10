@@ -16,6 +16,8 @@ jobs:
   - job: "Build_Sysinternalsebpf"
     pool: "Sysmon-Ubuntu-20.04-Pool"
     steps:
+    - checkout: self
+      persistCredentials: true
     - script: |
         mkdir build && cd build
         cmake ..
@@ -60,6 +62,8 @@ jobs:
   - job: "Build_CentOS_Sysinternalsebpf"
     pool: "Sysmon-CentOS-8-Pool"
     steps:
+    - checkout: self
+      persistCredentials: true
     - script: |
         mkdir build && cd build
         cmake ..
