@@ -16,6 +16,8 @@ jobs:
   - job: "Build_Sysinternalsebpf"
     pool: "Sysmon-Ubuntu-20.04-Pool"
     steps:
+    - checkout: self
+      persistCredentials: true
     - script: |
         mkdir build && cd build
         cmake ..
@@ -55,4 +57,48 @@ jobs:
         ArtifactName: 'drop'
         publishLocation: 'Container'
 
-# Add centos build
+
+# CentOS build and package
+  - job: "Build_CentOS_Sysinternalsebpf"
+    pool: "Sysmon-CentOS-8-Pool"
+    steps:
+    - checkout: self
+      persistCredentials: true
+    - script: |
+        mkdir build && cd build
+        cmake ..
+        make
+      displayName: "Build Sysinternalsebpf Binary"
+  
+  - job: "Sysinternalsebpf_CentOS_Package_Build"
+    pool: "Sysmon-CentOS-8-Pool"
+    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+    dependsOn:
+      - "Build_CentOS_Sysinternalsebpf"
+    steps:
+    - script: |
+        export REVISION=$(Build.BuildId)
+        sed -i "s/999999/$REVISION/g" $(Build.SourcesDirectory)/CMakeLists.txt
+        mkdir $(Build.SourcesDirectory)/build && cd $(Build.SourcesDirectory)/build
+        cmake ..
+        make
+      displayName: "Build Sysinternalsebpf Binary"
+    
+    - script: |
+        mkdir $(Build.SourcesDirectory)/pkgbuild
+        cd $(Build.SourcesDirectory)/build
+        make packages
+        mv rpm/*.rpm $(Build.SourcesDirectory)/pkgbuild
+      displayName: "Build Sysinternalsebpf Package"
+    
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)/pkgbuild/'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)/CentOS/'
+      displayName: 'Copy build artifacts to staging'
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
