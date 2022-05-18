@@ -25,7 +25,7 @@ stages:
     - job: "Build_Sysinternalsebpf_Ubuntu_20_04_Package"
       pool: "Sysmon-Ubuntu-20.04-Pool"
       steps:
-      - checkout: MyGitHubRepo
+      - checkout: SysinternalsEBPF
         persistCredentials: true
       - script: |
           mkdir build && cd build
@@ -57,7 +57,7 @@ stages:
     - job: "Build_Sysinternalsebpf_CentOS_8_Package"
       pool: "Sysmon-CentOS-8-Pool"
       steps:
-      - checkout: MyGitHubRepo
+      - checkout: SysinternalsEBPF
         persistCredentials: true
       - script: |
           mkdir build && cd build
