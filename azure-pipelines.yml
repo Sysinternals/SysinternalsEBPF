@@ -88,6 +88,7 @@ stages:
    jobs:
     - job: "Sign_Sysinternalsebpf_Ubuntu_20_04"
       pool: "Sysmon-Ubuntu-20.04-Pool"
+      condition: not(eq(variables['Build.Reason'], 'PullRequest'))  
       workspace:
         clean: all      
       steps:
@@ -118,6 +119,7 @@ stages:
 
     - job: "Sign_Sysinternalsebpf_CentOS_8"
       pool: "CentOS_Package_Build"
+      condition: not(eq(variables['Build.Reason'], 'PullRequest'))        
       workspace:
         clean: all      
       steps:
