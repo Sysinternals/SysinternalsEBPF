@@ -132,7 +132,9 @@ stages:
 
     - job: "Sign_Sysinternalsebpf_CentOS_8"
       pool: "CentOS_Package_Build"
-      condition: eq(variables['Sign'], 'true')     
+      condition: eq(variables['Sign'], 'true')    
+      dependsOn:
+        - Sign_Sysinternalsebpf_Ubuntu_20_04       
       workspace:
         clean: all      
       steps:
