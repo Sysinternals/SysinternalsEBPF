@@ -119,7 +119,7 @@ stages:
 
       - task: CopyFiles@2
         inputs:
-          SourceFolder: '$(Pipeline.Workspace)/Ubuntu_20_04_drop'
+          Contents: '$(Pipeline.Workspace)/Ubuntu_20_04_drop/**/*.deb'
           TargetFolder: '$(Build.ArtifactStagingDirectory)/Ubuntu_20_04_Signed/'
         displayName: 'Copy build artifacts to staging'
 
@@ -163,7 +163,7 @@ stages:
 
       - task: CopyFiles@2
         inputs:
-          Contents: '$(Pipeline.Workspace)/CentOS_8_drop'
+          Contents: '$(Pipeline.Workspace)/CentOS_8_drop/**/*.rpm'
           TargetFolder: '$(Build.ArtifactStagingDirectory)/CentOS_8_Signed/'
         displayName: 'Copy build artifacts to staging'
 
