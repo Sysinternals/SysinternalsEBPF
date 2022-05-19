@@ -117,6 +117,19 @@ stages:
               }
             ]
 
+      - task: CopyFiles@2
+        inputs:
+          SourceFolder: '$(Pipeline.Workspace)/Ubuntu'
+          TargetFolder: '$(Build.ArtifactStagingDirectory)/Ubuntu_20_04_Signed/'
+        displayName: 'Copy build artifacts to staging'
+
+      - task: PublishBuildArtifacts@1
+        inputs:
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)/Ubuntu_20_04_Signed/'
+          ArtifactName: 'Ubuntu_20_04_Signed'
+          publishLocation: 'Container'
+
+
     - job: "Sign_Sysinternalsebpf_CentOS_8"
       pool: "CentOS_Package_Build"
       condition: eq(variables['Sign'], 'true')     
