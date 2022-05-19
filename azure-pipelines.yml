@@ -99,12 +99,6 @@ stages:
           artifactName: 'Ubuntu_20_04_drop'
           targetPath: '$(Build.SourcesDirectory)/Ubuntu_20_04_drop'
 
-      - task: CopyFiles@2
-        inputs:
-          Contents: '$(Build.SourcesDirectory)/Ubuntu_20_04_drop/pkgbuild/*.deb'
-          TargetFolder: '$(Build.ArtifactStagingDirectory)/Ubuntu_20_04_Signed/'
-        displayName: 'Copy signed DEB package to staging'
-
       - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
         displayName: 'ESRP CodeSigning DEB'
         inputs:
@@ -122,18 +116,6 @@ stages:
                 "ToolVersion": "1.0"
               }
             ]
-
-      - script: ls
-        workingDirectory: $(Pipeline.Workspace)
-        displayName: List contents of a Pipeline.Workspace
-
-      - script: ls
-        workingDirectory: $(Pipeline.Workspace)/Ubuntu_20_04_drop
-        displayName: List contents of a Ubuntu_20_04_drop folder
-
-      - script: ls
-        workingDirectory: $(Pipeline.Workspace)/Ubuntu_20_04_drop/pkgbuild
-        displayName: List contents of a pkgbuild folder
 
       - task: CopyFiles@2
         inputs:
@@ -161,13 +143,13 @@ stages:
         inputs:
           buildType: 'current'
           artifactName: 'CentOS_8_drop'
-          targetPath: '$(Pipeline.Workspace)/CentOS_8_drop'
+          targetPath: '$(Build.SourcesDirectory)/CentOS_8_drop'
 
       - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
         displayName: 'ESRP CodeSigning DEB'
         inputs:
           ConnectedServiceName: 'Sysinternals ESRP CodeSigning'
-          FolderPath: '$(Pipeline.Workspace)/CentOS_8_drop'
+          FolderPath: '$(Build.SourcesDirectory)/CentOS_8_drop'
           Pattern: '*.rpm'
           signConfigType: inlineSignParams
           inlineOperation: |
@@ -183,7 +165,7 @@ stages:
 
       - task: CopyFiles@2
         inputs:
-          Contents: '$(Pipeline.Workspace)/CentOS_8_drop/pkgbuild/*.rpm'
+          Contents: '$(Build.SourcesDirectory)/CentOS_8_drop/pkgbuild/*.rpm'
           TargetFolder: '$(Build.ArtifactStagingDirectory)/CentOS_8_Signed/'
         displayName: 'Copy signed RPM package to staging'
 
