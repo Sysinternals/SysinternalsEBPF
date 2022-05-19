@@ -97,11 +97,11 @@ stages:
         inputs:
           buildType: 'current'
           artifactName: 'Ubuntu_20_04_drop'
-          targetPath: '$(Pipeline.Workspace)/Ubuntu_20_04_drop'
+          targetPath: '$(Build.SourcesDirectory)/Ubuntu_20_04_drop'
 
       - task: CopyFiles@2
         inputs:
-          Contents: '$(Pipeline.Workspace)/Ubuntu_20_04_drop/pkgbuild/*.deb'
+          Contents: '$(Build.SourcesDirectory)/Ubuntu_20_04_drop/pkgbuild/*.deb'
           TargetFolder: '$(Build.ArtifactStagingDirectory)/Ubuntu_20_04_Signed/'
         displayName: 'Copy signed DEB package to staging'
 
@@ -109,7 +109,7 @@ stages:
         displayName: 'ESRP CodeSigning DEB'
         inputs:
           ConnectedServiceName: 'Sysinternals ESRP CodeSigning'
-          FolderPath: '$(Pipeline.Workspace)/Ubuntu_20_04_drop'
+          FolderPath: '$(Build.SourcesDirectory)/Ubuntu_20_04_drop'
           Pattern: '*.deb'
           signConfigType: inlineSignParams
           inlineOperation: |
@@ -137,7 +137,7 @@ stages:
 
       - task: CopyFiles@2
         inputs:
-          Contents: '$(Pipeline.Workspace)/Ubuntu_20_04_drop/pkgbuild/*.deb'
+          Contents: '$(Build.SourcesDirectory)/Ubuntu_20_04_drop/pkgbuild/*.deb'
           TargetFolder: '$(Build.ArtifactStagingDirectory)/Ubuntu_20_04_Signed/'
         displayName: 'Copy signed DEB package to staging'
 
