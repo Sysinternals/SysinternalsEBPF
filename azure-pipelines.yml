@@ -160,3 +160,15 @@ stages:
                 "ToolVersion": "1.0"
               }
             ]
+
+      - task: CopyFiles@2
+        inputs:
+          SourceFolder: '$(Pipeline.Workspace)/CentOS'
+          TargetFolder: '$(Build.ArtifactStagingDirectory)/CentOS_8_Signed/'
+        displayName: 'Copy build artifacts to staging'
+
+      - task: PublishBuildArtifacts@1
+        inputs:
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)/CentOS_8_Signed/'
+          ArtifactName: '/CentOS_8_Signed/'
+          publishLocation: 'Container'            
