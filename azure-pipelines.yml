@@ -170,5 +170,5 @@ stages:
       - task: PublishBuildArtifacts@1
         inputs:
           PathtoPublish: '$(Build.ArtifactStagingDirectory)/CentOS_8_Signed/'
-          ArtifactName: '/CentOS_8_Signed/'
+          ArtifactName: 'CentOS_8_Signed/'
           publishLocation: 'Container'            
