@@ -163,7 +163,7 @@ stages:
 
       - task: CopyFiles@2
         inputs:
-          SourceFolder: '$(Pipeline.Workspace)/CentOS_8_drop'
+          Contents: '$(Pipeline.Workspace)/CentOS_8_drop'
           TargetFolder: '$(Build.ArtifactStagingDirectory)/CentOS_8_Signed/'
         displayName: 'Copy build artifacts to staging'
 
