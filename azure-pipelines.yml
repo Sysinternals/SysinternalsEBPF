@@ -117,6 +117,14 @@ stages:
               }
             ]
 
+      - script: ls
+        workingDirectory: $(Pipeline.Workspace)
+        displayName: List contents of a Pipeline.Workspace
+
+      - script: ls
+        workingDirectory: $(Pipeline.Workspace)/Ubuntu_20_04_drop
+        displayName: List contents of a Ubuntu_20_04_drop folder
+
       - task: CopyFiles@2
         inputs:
           Contents: '$(Pipeline.Workspace)/Ubuntu_20_04_drop/pkgbuild/*.deb'
