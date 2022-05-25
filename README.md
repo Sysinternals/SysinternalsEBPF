@@ -1,4 +1,4 @@
-# SysinternalsEBPF build and install instructions
+# SysinternalsEBPF build and install instructions [![Build Status](https://dev.azure.com/sysinternals/Tools/_apis/build/status/Sysinternals.SysinternalsEBPF?repoName=Sysinternals%2FSysinternalsEBPF&branchName=main)](https://dev.azure.com/sysinternals/Tools/_build/latest?definitionId=337&repoName=Sysinternals%2FSysinternalsEBPF&branchName=main)
 
 ## Dependencies
 For Ubuntu:
