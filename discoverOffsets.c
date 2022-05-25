@@ -172,7 +172,7 @@ void memDumpCloseAll()
 //--------------------------------------------------------------------
 bool isPointer(uint64_t ptr)
 {
-    if (labs(ptr - memAddrs[task]) < MAX_POINTER_DIFF) {
+    if (ptr < (MAX_POINTER_DIFF + memAddrs[task])) {
         return true;
     } else {
         return false;
@@ -189,7 +189,7 @@ bool isPointer(uint64_t ptr)
 //--------------------------------------------------------------------
 bool near(uint64_t a, uint64_t b, uint64_t range)
 {
-    if (labs(a - b) <= range) {
+    if (a <= (range + b)) {
         return true;
     } else {
         return false;
