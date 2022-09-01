@@ -1,10 +1,15 @@
 # SysinternalsEBPF build and install instructions [![Build Status](https://dev.azure.com/sysinternals/Tools/_apis/build/status/Sysinternals.SysinternalsEBPF?repoName=Sysinternals%2FSysinternalsEBPF&branchName=main)](https://dev.azure.com/sysinternals/Tools/_build/latest?definitionId=337&repoName=Sysinternals%2FSysinternalsEBPF&branchName=main)
 
 ## Dependencies
-For Ubuntu:
+Ubuntu:
 ```
 sudo apt update
 sudo apt -y install build-essential gcc g++ make cmake libelf-dev llvm clang libzstd1 git libjson-glib-dev
+```
+
+RHEL:
+```
+sudo yum install cmake gcc gcc-c++ kernel-devel make json-glib-devel elfutils-libelf-devel llvm clang 
 ```
 
 ## Build
