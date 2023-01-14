@@ -277,8 +277,16 @@ static inline uint32_t derefFilepathInto(char *dest, const void *base, const uns
             return 0;
         }
         if (size > 0)
-            // overwrite the null char with a slash
-            temp[(PATH_MAX - size - 1) & (PATH_MAX - 1)] = '/';
+        {
+            asm volatile("%[tsize] = " XSTR(PATH_MAX) "\n"
+                         "%[tsize] -= %[size]\n"
+                         "%[tsize] -= 1\n"
+                         "%[tsize] &= " XSTR(PATH_MAX - 1) "\n"
+                        :[size]"+&r"(size), [tsize]"+&r"(tsize)
+                        );
+
+            temp[tsize & (PATH_MAX -1)] = '/';
+        }
         size = (size + dlen2) & (PATH_MAX - 1);  // by restricting size to PATH_MAX we help the verifier keep the complexity
                                                 // low enough so that it can analyse the loop without hitting the 1M ceiling
         // check if this is the root of the filesystem

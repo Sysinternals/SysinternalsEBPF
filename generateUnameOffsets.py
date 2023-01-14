@@ -109,12 +109,12 @@ with open(sys.argv[1]) as offsetsReqd:
         output = '    '
         if not first:
             output += 'else '
-        output += f'if (strcmp(param, "{param}"))\n'
+        output += f'if (strcmp(param, "{param}")==0)\n'
         output += f'        return o->{param};'
         print(output)
         first = False
     for param in params_opt:
-        print(f'    else if (strcmp(param, "{param}"))')
+        print(f'    else if (strcmp(param, "{param}")==0)')
         print(f'        return o->{param};')
     print('    return NULL;')
     print('}\n')
