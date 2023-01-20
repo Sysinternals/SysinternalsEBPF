@@ -28,12 +28,12 @@
 //
 //====================================================================
 
+#include "/usr/include/fcntl.h"
 #include <stdio.h>
 #include <unistd.h>
-#include <fcntl.h>
+#include <sys/stat.h>
 #include <sys/mman.h>
 #include <stdbool.h>
-#include <sys/stat.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -142,7 +142,8 @@ bool dropFile(const char *filepath, const char *start,
 
     unlink(filepath);
 
-    fd = creat(filepath, perms);
+    fd = open(filepath, O_WRONLY|O_CREAT|O_TRUNC, perms);
+    //fd = creat(filepath, perms);
     if (fd < 0) {
         fprintf(stderr, "Cannot write %s\n", filepath);
         return false;

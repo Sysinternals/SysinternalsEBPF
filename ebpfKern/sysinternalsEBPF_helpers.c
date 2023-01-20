@@ -32,6 +32,7 @@
 #define SYSINTERNALS_EBPF_HELPERS_C
 
 #include <linux/fcntl.h>
+//#include "vmlinux.h"
 
 //
 // Make a literal into a string for inclusion in asm statements

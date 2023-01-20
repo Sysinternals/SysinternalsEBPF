@@ -88,8 +88,8 @@ extern char _binary_ebpfKern_sysinternalsEBPF_common_h_start[];
 extern char _binary_ebpfKern_sysinternalsEBPF_common_h_end[];
 extern char _binary_ebpfKern_sysinternalsEBPF_helpers_c_start[];
 extern char _binary_ebpfKern_sysinternalsEBPF_helpers_c_end[];
-extern char _binary_LICENSE_LPGL_2_1_start[];
-extern char _binary_LICENSE_LPGL_2_1_end[];
+extern char _binary_LICENSE_LGPL_2_1_start[];
+extern char _binary_LICENSE_LGPL_2_1_end[];
 extern char _binary_src_bpf_helpers_h_start[];
 extern char _binary_src_bpf_helpers_h_end[];
 extern char _binary_src_bpf_helper_defs_h_start[];
@@ -295,8 +295,8 @@ int main(int argc, char *argv[])
         return 1;
 
     if (!dropFile(LIBBPF_DIR "/LICENSE.LPGL-2.1",
-        _binary_LICENSE_LPGL_2_1_start,
-        _binary_LICENSE_LPGL_2_1_end,
+        _binary_LICENSE_LGPL_2_1_start,
+        _binary_LICENSE_LGPL_2_1_end,
         force,
         fileMode))
         return 1;

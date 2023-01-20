@@ -56,8 +56,8 @@ configure_file(package/SPECS.in/spec.in SPECS.spec)
 #
 # enable Debug while pre-release; re-enable it post-release to add symbols to binary
 #
-#set(CMAKE_BUILD_TYPE Debug)
-#option(DEBUG_K "Enter debug mode" On)
+set(CMAKE_BUILD_TYPE Debug)
+option(DEBUG_K "Enter debug mode" On)
 
 #
 # external programs used by this build
@@ -72,7 +72,7 @@ set(PACKAGE_NAME "sysinternalsebpf")
 #
 # report warnings as errors
 #
-add_compile_options(-Wall -Werror)
+add_compile_options(-Wall -Werror -g)
 
 include(ExternalProject)
 
@@ -81,7 +81,7 @@ include(ExternalProject)
 ExternalProject_Add(libbpf
     GIT_REPOSITORY https://github.com/libbpf/libbpf.git
 #    GIT_TAG master
-    GIT_TAG v0.1.0
+    GIT_TAG v1.1.0
     PREFIX ./libbpf
     CONFIGURE_COMMAND ""
     BUILD_COMMAND cd ../libbpf/src && bash -c "CFLAGS=\"-g -O2 -Werror -Wall -fPIC\" make"
@@ -153,7 +153,7 @@ add_executable(libsysinternalsEBPFinstaller
     ebpfKern-LICENSE.o
     ebpfKern-sysinternalsEBPF_common.h.o
     ebpfKern-sysinternalsEBPF_helpers.c.o
-    libbpf-LICENSE.LPGL-2.1.o
+    libbpf-LICENSE.LGPL-2.1.o
     libbpf-src-bpf_helpers.h.o
     libbpf-src-bpf_helper_defs.h.o
 )
@@ -188,7 +188,7 @@ set(PACKED_EBPFKERN_FILES
     )
 
 set(PACKED_LIBBPF_FILES
-    LICENSE.LPGL-2.1
+    LICENSE.LGPL-2.1
     )
 
 set(PACKED_LIBBPF_SRC_FILES
@@ -288,7 +288,7 @@ install(FILES
 )
 
 install(FILES
-            "${libbpf_SOURCE_DIR}/LICENSE.LPGL-2.1"
+            "${libbpf_SOURCE_DIR}/LICENSE.LGPL-2.1"
             "${libbpf_SOURCE_DIR}/src/bpf_helpers.h"
             "${libbpf_SOURCE_DIR}/src/bpf_helper_defs.h"
         DESTINATION /opt/sysinternalsEBPF/libbpf
@@ -376,6 +376,7 @@ set(CLANG_OPTIONS -Wno-unused-value
                   -Wno-address-of-packed-member
                   -Wno-tautological-compare
                   -Wno-unknown-warning-option
+                  -g
                   )
 set(CLANG_DEFINES -D __KERNEL__
                   -D __BPF_TRACING__

@@ -1779,7 +1779,6 @@ int discoverOffsets(
     char filepath[PATH_MAX] = SYSINTERNALS_EBPF_INSTALL_DIR "/" KERN_MEM_DUMP_OBJ;
     struct stat filepathStat;
     struct utsname unameStruct = { 0 };
-    struct perf_buffer_opts pbOpts = {};
     struct perf_buffer *pb;
     int ret;
     char cwd[PATH_MAX];
@@ -1827,13 +1826,13 @@ int discoverOffsets(
         return E_DISC_NOPROG;
     }
 
-    if ((bpfSysExit = bpf_object__find_program_by_title(bpfObj,"tracepoint/syscalls/sys_exit_uname")) == NULL) {
-        fprintf(stderr, "ERROR: failed to find program: 'tracepoint/syscalls/sys_exit_uname' '%s'\n", strerror(errno));
+    if ((bpfSysExit = bpf_object__find_program_by_name(bpfObj,"sys_exit_uname")) == NULL) {
+        fprintf(stderr, "ERROR: failed to find program: 'sys_exit_uname' '%s'\n", strerror(errno));
         return E_DISC_NOPROG;
     }
 
-    if ((bpfConsumeSkb = bpf_object__find_program_by_title(bpfObj,"tracepoint/skb/consume_skb")) == NULL) {
-        fprintf(stderr, "ERROR: failed to find program: 'tracepoint/skb/consume_skb' '%s'\n", strerror(errno));
+    if ((bpfConsumeSkb = bpf_object__find_program_by_name(bpfObj,"consume_skb")) == NULL) {
+        fprintf(stderr, "ERROR: failed to find program: 'consume_skb' '%s'\n", strerror(errno));
         return E_DISC_NOPROG;
     }
 
@@ -1867,10 +1866,8 @@ int discoverOffsets(
     if (libbpf_get_error(bpfConsumeSkbLink))
         return E_DISC_NOATTACH;
 
-    pbOpts.sample_cb = memDumpEventCb;
-    pbOpts.lost_cb = NULL;
-    pbOpts.ctx     = NULL;
-    pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, &pbOpts); // param 2 is page_cnt == number of pages to mmap.
+    pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, memDumpEventCb, NULL, NULL, NULL); // param 2 is page_cnt == number of pages to mmap.
+    //pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, &pbOpts); // param 2 is page_cnt == number of pages to mmap.
     ret = libbpf_get_error(pb);
     if (ret) {
         fprintf(stderr, "ERROR: failed to setup perf_buffer: %d\n", ret);

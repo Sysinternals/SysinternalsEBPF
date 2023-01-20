@@ -401,7 +401,7 @@ bool connectRawSock()
         return false;
     }
 
-    rawBpfProg = bpf_object__find_program_by_title(rawBpfObj, "rawSock");
+    rawBpfProg = bpf_object__find_program_by_name(rawBpfObj, "rawEBPFprog");
     if (rawBpfProg == NULL) {
         fprintf(stderr, "ERROR: failed to locate program: %s '%s'\n", filepath, strerror(errno));
         return false;
@@ -695,7 +695,7 @@ bool locateTPprogs(const ebpfTelemetryObject *obj)
             unsigned int n = 0;
             for (n=0; n<7; n++) {
                 programName[programNameLen - 1] = '0' + n;
-                if ((s->prog[n] = bpf_object__find_program_by_title(bpfObj, programName)) == NULL) {
+                if ((s->prog[n] = bpf_object__find_program_by_name(bpfObj, programName)) == NULL) {
                     fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", programName, strerror(errno));
                     return false;
                 }
@@ -703,7 +703,7 @@ bool locateTPprogs(const ebpfTelemetryObject *obj)
             }
         } else {
             // attach this to specified enter tracepoint
-            if ((s->prog[0] = bpf_object__find_program_by_title(bpfObj, p->program)) == NULL) {
+            if ((s->prog[0] = bpf_object__find_program_by_name(bpfObj, p->program)) == NULL) {
                 fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
                 return false;
             }
@@ -739,7 +739,7 @@ bool locateTPprogs(const ebpfTelemetryObject *obj)
             return false;
         }
 
-        if ((s->prog[0] = bpf_object__find_program_by_title(bpfObj, p->program)) == NULL) {
+        if ((s->prog[0] = bpf_object__find_program_by_name(bpfObj, p->program)) == NULL) {
             fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
             return false;
         }
@@ -795,7 +795,7 @@ bool locateRTPprogs(const ebpfTelemetryObject *obj)
     // raw sys_enter tracepoint
     for (i=0; i<numRawSysEnter; i++) {
         const ebpfSyscallRTPprog *p = &obj->syscallRTPenterProgs[i];
-        if ((bpfRawSysEnter[i] = bpf_object__find_program_by_title(bpfObj, p->program)) == NULL) {
+        if ((bpfRawSysEnter[i] = bpf_object__find_program_by_name(bpfObj, p->program)) == NULL) {
             fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
             return false;
         }
@@ -804,7 +804,7 @@ bool locateRTPprogs(const ebpfTelemetryObject *obj)
 
     for (i=0; i<numRawSysExit; i++) {
         const ebpfSyscallRTPprog *p = &obj->syscallRTPexitProgs[i];
-        if ((bpfRawSysExit[i] = bpf_object__find_program_by_title(bpfObj, p->program)) == NULL) {
+        if ((bpfRawSysExit[i] = bpf_object__find_program_by_name(bpfObj, p->program)) == NULL) {
             fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
             return false;
         }
@@ -847,7 +847,7 @@ bool locateOtherTPprogs(const ebpfTelemetryObject *obj)
 
     for (i=0; i<numOtherTp; i++) {
         const ebpfTracepointProg *p = &obj->otherTPprogs[i];
-        if ((bpfOtherTp[i] = bpf_object__find_program_by_title(bpfObj, p->program)) == NULL) {
+        if ((bpfOtherTp[i] = bpf_object__find_program_by_name(bpfObj, p->program)) == NULL) {
             fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
             return false;
         }
@@ -1208,6 +1208,13 @@ void checkPerfErrors()
     }
 }
 
+static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
+{
+//	if (level == LIBBPF_DEBUG && !env.verbose)
+//		return 0;
+	return vfprintf(stderr, format, args);
+}
+
 //--------------------------------------------------------------------
 //
 // ebpfStart
@@ -1238,6 +1245,9 @@ int ebpfStart(
     int                         ret;
     perfError                   perfIndex;
     uint32_t                    perfIndexIndex;
+    struct bpf_program *prog;
+
+    libbpf_set_print(libbpf_print_fn);
 
     bpfObj = bpf_object__open(filepath);
     if (libbpf_get_error(bpfObj)) {
@@ -1260,6 +1270,15 @@ int ebpfStart(
     if (numOtherTp > 0) {
         // other tracepoints
         if (!locateOtherTPprogs(object)) {
+
+            bpf_object__for_each_program(prog, bpfObj) {
+                    const char *name = bpf_program__name(prog);
+
+                    fprintf(stderr, "Prog enum: '%s'\n", name);
+            }
+
+
+
             return E_EBPF_NOOTHTP;
         }
     }
@@ -1322,10 +1341,8 @@ int ebpfStart(
     }
 
     // set up perf ring buffer
-    pbOpts.sample_cb = eventCb;
-    pbOpts.lost_cb = (EventLostCallback_u64 *)eventsLostCb;
-    pbOpts.ctx = context;
-    pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, &pbOpts); // param 2 is page_cnt == number of pages to mmap.
+    pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, eventCb, (EventLostCallback_u64 *)eventsLostCb, context, /*&pbOpts*/ NULL); // param 2 is page_cnt == number of pages to mmap.    
+    //pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, &pbOpts); // param 2 is page_cnt == number of pages to mmap.
     ret = libbpf_get_error(pb);
     if (ret) {
         fprintf(stderr, "ERROR: failed to setup perf_buffer: %d\n", ret);
