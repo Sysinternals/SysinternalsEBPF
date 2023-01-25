@@ -31,15 +31,19 @@
 #ifndef SYSINTERNALS_EBPF_COMMON_H
 #define SYSINTERNALS_EBPF_COMMON_H
 
-//#include "vmlinux.h"
-#include <stdint.h>
+#ifndef SYSMON_EBPF_CO_RE
 #include <linux/version.h>
 #include <linux/bpf.h>
-#include <bpf_helpers.h>
 #include <linux/string.h>
 #include <linux/limits.h>
-#include <asm/unistd_64.h>
 #include <asm/ptrace.h>
+#else
+#define PATH_MAX        4096        // Missing def
+#endif
+
+#include <stdint.h>
+#include <bpf_helpers.h>
+#include <asm/unistd_64.h>
 #include <sysinternalsEBPFshared.h>
 
 // debug tracing can be found using:
@@ -59,13 +63,20 @@
 #define false 0
 
 // x64 syscall macros
+#ifdef SYSMON_EBPF_CO_RE
+#define SYSCALL_PT_REGS_PARM1(x) ((x)->di)
+#define SYSCALL_PT_REGS_PARM2(x) ((x)->si)
+#define SYSCALL_PT_REGS_PARM3(x) ((x)->dx)
+#define SYSCALL_PT_REGS_RC(x)    ((x)->ax)
+#else
 #define SYSCALL_PT_REGS_PARM1(x) ((x)->rdi)
 #define SYSCALL_PT_REGS_PARM2(x) ((x)->rsi)
 #define SYSCALL_PT_REGS_PARM3(x) ((x)->rdx)
+#define SYSCALL_PT_REGS_RC(x)    ((x)->rax)
+#endif
 #define SYSCALL_PT_REGS_PARM4(x) ((x)->r10)
 #define SYSCALL_PT_REGS_PARM5(x) ((x)->r8)
 #define SYSCALL_PT_REGS_PARM6(x) ((x)->r9)
-#define SYSCALL_PT_REGS_RC(x)    ((x)->rax)
 
 #define CMDLINE_MAX_LEN 16384 // must be power of 2
 #define MAX_FDS 65535

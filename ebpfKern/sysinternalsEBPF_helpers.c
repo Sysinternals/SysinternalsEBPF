@@ -31,8 +31,11 @@
 #ifndef SYSINTERNALS_EBPF_HELPERS_C
 #define SYSINTERNALS_EBPF_HELPERS_C
 
-#include <linux/fcntl.h>
-//#include "vmlinux.h"
+#include <string.h>
+
+#ifndef AT_FDCWD
+#define AT_FDCWD		-100
+#endif
 
 //
 // Make a literal into a string for inclusion in asm statements
