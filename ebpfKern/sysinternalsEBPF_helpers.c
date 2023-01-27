@@ -199,22 +199,31 @@ static inline const void *derefInodeFromFd(const void *task, unsigned int fd, co
     const void *dentry = NULL;
     const void *inode = NULL;
 
+#ifdef EBPF_CO_RE
+    fd_table = (const void**) BPF_CORE_READ((struct task_struct *)task, files, fdt, fd);
+#else
     fd_table = (const void **)derefPtr(task, config->offsets.fd_table);
+#endif
     if (!fd_table)
         return NULL;
     if (bpf_probe_read(&file, sizeof(file), &fd_table[fd & MAX_FDS]) != READ_OKAY || !file)
         return NULL;
+#ifdef EBPF_CO_RE
+    inode = BPF_CORE_READ((struct file *)file, f_path.dentry, d_inode);
+    if (!dentry)
+        return 0;
+#else
     path = (const void *)derefMember(file, config->offsets.fd_path);
     if (!path)
         return NULL;
     if (bpf_probe_read(&dentry, sizeof(dentry), path + config->offsets.path_dentry[0]) != READ_OKAY || !dentry)
         return NULL;
     inode = (const void *)derefPtr(dentry, config->offsets.dentry_inode);
+#endif
     if (!inode)
         return NULL;
     return inode;
 }
-
 
 
 //--------------------------------------------------------------------
@@ -225,7 +234,7 @@ static inline const void *derefInodeFromFd(const void *task, unsigned int fd, co
 //
 //--------------------------------------------------------------------
 __attribute__((always_inline))
-static inline uint32_t derefFilepathInto(char *dest, const void *base, const unsigned int *refs, const ebpfConfig *config)
+static inline uint32_t derefFilepathInto(char *dest, const void *dentry, const void *vfsmount, const ebpfConfig *config)
 {
     int dlen, dlen2;
     char *dname = NULL;
@@ -234,9 +243,7 @@ static inline uint32_t derefFilepathInto(char *dest, const void *base, const uns
     unsigned int size = 0;
     uint32_t map_id = bpf_get_smp_processor_id();
     const void *path = NULL;
-    const void *dentry = NULL;
     const void *newdentry = NULL;
-    const void *vfsmount = NULL;
     const void *mnt = NULL;
     uint32_t tsize = 0;
 
@@ -244,29 +251,7 @@ static inline uint32_t derefFilepathInto(char *dest, const void *base, const uns
     dest[0] = 0x00;
 
 #ifdef EBPF_CO_RE
-    dentry = BPF_CORE_READ((struct task_struct *)base, mm, exe_file, f_path.dentry);
-    if (!dentry)
-        return 0;
-
-    vfsmount = BPF_CORE_READ((struct task_struct *)base, mm, exe_file, f_path.mnt);
-    if (!vfsmount)
-        return 0;
-
-    mnt = container_of(vfsmount, struct mount, mnt);        
-
-#else
-    path = derefMember(base, refs);
-    if (!path)
-        return 0;
-    if (bpf_probe_read(&dentry, sizeof(dentry), path + config->offsets.path_dentry[0]) != READ_OKAY)
-        return 0;
-
-    if (!dentry)
-        return 0;
-
-    // get a pointer to the vfsmount
-    if (bpf_probe_read(&vfsmount, sizeof(vfsmount), path + config->offsets.path_vfsmount[0]) != READ_OKAY)
-        return 0;
+    mnt = container_of(vfsmount, struct mount, mnt);
 #endif
 
     // retrieve temporary filepath storage
@@ -322,7 +307,7 @@ static inline uint32_t derefFilepathInto(char *dest, const void *base, const uns
             // find mount struct from vfsmount
 #ifdef EBPF_CO_RE
             const void *parent = BPF_CORE_READ((struct mount *)mnt, mnt_parent);
-#else 
+#else
             mnt = vfsmount - config->offsets.mount_mnt[0];
             const void *parent = (const void *)derefPtr(mnt, config->offsets.mount_parent);
 #endif
@@ -332,7 +317,7 @@ static inline uint32_t derefFilepathInto(char *dest, const void *base, const uns
             // move to mount point
 #ifdef EBPF_CO_RE
             newdentry = BPF_CORE_READ((struct mount *)mnt, mnt_mountpoint);
-            mnt = parent; 
+            mnt = parent;
 #else
             vfsmount = parent + config->offsets.mount_mnt[0];
             newdentry = (const void *)derefPtr(mnt, config->offsets.mount_mountpoint);
@@ -424,7 +409,7 @@ static inline uint32_t copyCommandline(char *e, const void *task, const ebpfConf
 #ifdef EBPF_CO_RE
     uint64_t arg_start = BPF_CORE_READ((struct task_struct *)task, mm, arg_start);
     uint64_t arg_end = BPF_CORE_READ((struct task_struct *)task, mm, arg_end);
-#else        
+#else
     uint64_t arg_start = derefPtr(task, config->offsets.mm_arg_start);
     uint64_t arg_end = derefPtr(task, config->offsets.mm_arg_end);
 #endif
@@ -455,15 +440,26 @@ __attribute__((always_inline))
 static inline uint32_t fdToPath(char *fdPath, int fd, const void *task, const ebpfConfig *config)
 {
     int byteCount;
+    void* dentry = NULL;
+    void* vfsmount = NULL;
+    void* path = NULL;
 
     // check if fd is valid
+#ifdef EBPF_CO_RE
+    int maxFds = BPF_CORE_READ((struct task_struct *)task, files, fdt, max_fds);
+#else
     int maxFds = derefPtr(task, config->offsets.max_fds);
+#endif
     if (fd < 0 || fd > MAX_FDS || maxFds <= 0 || fd > maxFds) {
         return 0;
     }
 
     // resolve the fd to the fd_path
+#ifdef EBPF_CO_RE
+    const void **fdTable = (const void**) BPF_CORE_READ((struct task_struct *)task, files, fdt, fd);
+#else
     const void **fdTable = (const void **)derefPtr(task, config->offsets.fd_table);
+#endif
     if (!fdTable) {
         return 0;
     }
@@ -472,7 +468,29 @@ static inline uint32_t fdToPath(char *fdPath, int fd, const void *task, const eb
     if (bpf_probe_read(&file, sizeof(file), &fdTable[fd & MAX_FDS]) != READ_OKAY || !file) {
         return 0;
     } else {
-        return derefFilepathInto(fdPath, file, config->offsets.fd_path, config);
+#ifdef EBPF_CO_RE
+        dentry = BPF_CORE_READ((struct file *)file, f_path.dentry);
+        if (!dentry)
+            return 0;
+
+        vfsmount = BPF_CORE_READ((struct file *)file, f_path.mnt);
+        if (!vfsmount)
+            return 0;
+#else
+        path = derefMember(task, config->offsets.fd_path);
+        if (!path)
+            return 0;
+        if (bpf_probe_read(&dentry, sizeof(dentry), path + config->offsets.path_dentry[0]) != READ_OKAY)
+            return 0;
+
+        if (!dentry)
+            return 0;
+
+        // get a pointer to the vfsmount
+        if (bpf_probe_read(&vfsmount, sizeof(vfsmount), path + config->offsets.path_vfsmount[0]) != READ_OKAY)
+            return 0;
+#endif
+        return derefFilepathInto(fdPath, dentry, vfsmount, config);
     }
 }
 
@@ -626,5 +644,109 @@ static inline void sysEnterCompleteAndStore(const argsStruct *eventArgs, uint32_
         BPF_PRINTK("ERROR, HASHMAP: failed to update args map, %ld\n", ret);
     }
 }
+
+//--------------------------------------------------------------------
+//
+// copyExePath
+//
+// Extract exe path from dentry.
+//
+//--------------------------------------------------------------------
+__attribute__((always_inline))
+static inline uint32_t copyExePath(char *dest, const void *base, const ebpfConfig *config)
+{
+    const void *path = NULL;
+    const void *dentry = NULL;
+    const void *vfsmount = NULL;
+
+#ifdef EBPF_CO_RE
+    dentry = BPF_CORE_READ((struct task_struct *)base, mm, exe_file, f_path.dentry);
+    if (!dentry)
+        return 0;
+
+    vfsmount = BPF_CORE_READ((struct task_struct *)base, mm, exe_file, f_path.mnt);
+    if (!vfsmount)
+        return 0;
+#else
+    path = derefMember(base, config->offsets.exe_path);
+    if (!path)
+        return 0;
+    if (bpf_probe_read(&dentry, sizeof(dentry), path + config->offsets.path_dentry[0]) != READ_OKAY)
+        return 0;
+
+    if (!dentry)
+        return 0;
+
+    // get a pointer to the vfsmount
+    if (bpf_probe_read(&vfsmount, sizeof(vfsmount), path + config->offsets.path_vfsmount[0]) != READ_OKAY)
+        return 0;
+#endif
+
+    return derefFilepathInto(dest, dentry, vfsmount, config);
+}
+
+//--------------------------------------------------------------------
+//
+// copyPwdPath
+//
+// Extract pwd path from dentry.
+//
+//--------------------------------------------------------------------
+__attribute__((always_inline))
+static inline uint32_t copyPwdPath(char *dest, const void *base, const ebpfConfig *config)
+{
+    const void *path = NULL;
+    const void *dentry = NULL;
+    const void *vfsmount = NULL;
+
+#ifdef EBPF_CO_RE
+    dentry = BPF_CORE_READ((struct task_struct *)base, fs, pwd.dentry);
+    if (!dentry)
+        return 0;
+
+    vfsmount = BPF_CORE_READ((struct task_struct *)base, fs, pwd.mnt);
+    if (!vfsmount)
+        return 0;
+#else
+    path = derefMember(base, config->offsets.pwd_path);
+    if (!path)
+        return 0;
+    if (bpf_probe_read(&dentry, sizeof(dentry), path + config->offsets.path_dentry[0]) != READ_OKAY)
+        return 0;
+
+    if (!dentry)
+        return 0;
+
+    // get a pointer to the vfsmount
+    if (bpf_probe_read(&vfsmount, sizeof(vfsmount), path + config->offsets.path_vfsmount[0]) != READ_OKAY)
+        return 0;
+#endif
+
+    return derefFilepathInto(dest, dentry, vfsmount, config);
+}
+
+//--------------------------------------------------------------------
+//
+// getUid
+//
+// Get the uid.
+//
+//--------------------------------------------------------------------
+__attribute__((always_inline))
+static inline uint64_t getUid(struct task_struct* task, const ebpfConfig *config)
+{
+    uint64_t ret = 0;
+#ifdef EBPF_CO_RE
+    ret = BPF_CORE_READ((struct task_struct *)task, cred, uid.val);
+#else
+    const void *cred = (const void *)derefPtr(task, config->offsets.cred);
+    if (cred) {
+        ret = derefPtr(cred, config->offsets.cred_uid);
+    }
+#endif
+
+    return ret;
+}
+
 
 #endif
