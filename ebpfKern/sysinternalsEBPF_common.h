@@ -31,7 +31,7 @@
 #ifndef SYSINTERNALS_EBPF_COMMON_H
 #define SYSINTERNALS_EBPF_COMMON_H
 
-#ifndef SYSMON_EBPF_CO_RE
+#ifndef EBPF_CO_RE
 #include <linux/version.h>
 #include <linux/bpf.h>
 #include <linux/string.h>
@@ -63,7 +63,7 @@
 #define false 0
 
 // x64 syscall macros
-#ifdef SYSMON_EBPF_CO_RE
+#ifdef EBPF_CO_RE
 #define SYSCALL_PT_REGS_PARM1(x) ((x)->di)
 #define SYSCALL_PT_REGS_PARM2(x) ((x)->si)
 #define SYSCALL_PT_REGS_PARM3(x) ((x)->dx)

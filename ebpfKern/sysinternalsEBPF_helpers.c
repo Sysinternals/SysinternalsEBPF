@@ -215,6 +215,8 @@ static inline const void *derefInodeFromFd(const void *task, unsigned int fd, co
     return inode;
 }
 
+
+
 //--------------------------------------------------------------------
 //
 // derefFilepathInto
@@ -241,6 +243,18 @@ static inline uint32_t derefFilepathInto(char *dest, const void *base, const uns
     // nullify string in case of error
     dest[0] = 0x00;
 
+#ifdef EBPF_CO_RE
+    dentry = BPF_CORE_READ((struct task_struct *)base, mm, exe_file, f_path.dentry);
+    if (!dentry)
+        return 0;
+
+    vfsmount = BPF_CORE_READ((struct task_struct *)base, mm, exe_file, f_path.mnt);
+    if (!vfsmount)
+        return 0;
+
+    mnt = container_of(vfsmount, struct mount, mnt);        
+
+#else
     path = derefMember(base, refs);
     if (!path)
         return 0;
@@ -253,27 +267,36 @@ static inline uint32_t derefFilepathInto(char *dest, const void *base, const uns
     // get a pointer to the vfsmount
     if (bpf_probe_read(&vfsmount, sizeof(vfsmount), path + config->offsets.path_vfsmount[0]) != READ_OKAY)
         return 0;
+#endif
 
     // retrieve temporary filepath storage
     temp = bpf_map_lookup_elem(&temppathArray, &map_id);
     if (!temp)
         return 0;
 
-
 #ifdef NOLOOPS
     #pragma unroll
 #endif
     for (i=0; i<FILEPATH_NUMDIRS; i++) {
+#ifdef EBPF_CO_RE
+        dname = (char*) BPF_CORE_READ((struct dentry *)dentry, d_name.name);
+#else
         if (bpf_probe_read(&dname, sizeof(dname), dentry + config->offsets.dentry_name[0]) != READ_OKAY) {
             return 0;
         }
+#endif
         if (!dname) {
             return 0;
         }
         // store this dentry name in start of second half of our temporary storage
         dlen = bpf_probe_read_str(&temp[PATH_MAX], PATH_MAX, dname);
+        BPF_PRINTK("dname: (%s)\n", dname);
         // get parent dentry
+#ifdef EBPF_CO_RE
+        newdentry = (char*) BPF_CORE_READ((struct dentry *)dentry, d_parent);
+#else
         bpf_probe_read(&newdentry, sizeof(newdentry), dentry + config->offsets.dentry_parent[0]);
+#endif
         // copy the temporary copy to the first half of our temporary storage, building it backwards from the middle of it
         dlen2 = bpf_probe_read_str(&temp[(PATH_MAX - size - dlen) & (PATH_MAX - 1)], dlen & (PATH_MAX - 1), &temp[PATH_MAX]);
         // check if current dentry name is valid
@@ -297,14 +320,23 @@ static inline uint32_t derefFilepathInto(char *dest, const void *base, const uns
         if (!newdentry || dentry == newdentry) {
             // check if we're on a mounted partition
             // find mount struct from vfsmount
+#ifdef EBPF_CO_RE
+            const void *parent = BPF_CORE_READ((struct mount *)mnt, mnt_parent);
+#else 
             mnt = vfsmount - config->offsets.mount_mnt[0];
             const void *parent = (const void *)derefPtr(mnt, config->offsets.mount_parent);
+#endif
             // check if we're at the real root
             if (parent == mnt)
                 break;
             // move to mount point
+#ifdef EBPF_CO_RE
+            newdentry = BPF_CORE_READ((struct mount *)mnt, mnt_mountpoint);
+            mnt = parent; 
+#else
             vfsmount = parent + config->offsets.mount_mnt[0];
             newdentry = (const void *)derefPtr(mnt, config->offsets.mount_mountpoint);
+#endif
             // another check for real root
             if (dentry == newdentry)
                 break;
@@ -389,8 +421,13 @@ __attribute__((always_inline))
 static inline uint32_t copyCommandline(char *e, const void *task, const ebpfConfig *config)
 {
     // read the more reliable cmdline from task_struct->mm->arg_start
+#ifdef EBPF_CO_RE
+    uint64_t arg_start = BPF_CORE_READ((struct task_struct *)task, mm, arg_start);
+    uint64_t arg_end = BPF_CORE_READ((struct task_struct *)task, mm, arg_end);
+#else        
     uint64_t arg_start = derefPtr(task, config->offsets.mm_arg_start);
     uint64_t arg_end = derefPtr(task, config->offsets.mm_arg_end);
+#endif
 
     if (arg_start >= arg_end)
         return 0;
