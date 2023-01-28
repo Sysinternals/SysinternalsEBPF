@@ -156,6 +156,7 @@ add_executable(libsysinternalsEBPFinstaller
     libbpf-LICENSE.LGPL-2.1.o
     libbpf-src-bpf_helpers.h.o
     libbpf-src-bpf_helper_defs.h.o
+    libbpf-src-bpf_core_read.h.o
 )
 
 add_custom_target(packages
