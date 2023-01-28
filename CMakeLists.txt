@@ -293,6 +293,7 @@ install(FILES
             "${libbpf_SOURCE_DIR}/LICENSE.LGPL-2.1"
             "${libbpf_SOURCE_DIR}/src/bpf_helpers.h"
             "${libbpf_SOURCE_DIR}/src/bpf_helper_defs.h"
+            "${libbpf_SOURCE_DIR}/src/bpf_core_read.h"
         DESTINATION /opt/sysinternalsEBPF/libbpf
         PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
 )
