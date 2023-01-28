@@ -52,6 +52,7 @@ endif()
 
 configure_file(package/DEBIAN.in/control.in DEBIANcontrol)
 configure_file(package/SPECS.in/spec.in SPECS.spec)
+configure_file(package/SPECS.in/specrpm.in SPECSRPM.spec)
 
 #
 # enable Debug while pre-release; re-enable it post-release to add symbols to binary
