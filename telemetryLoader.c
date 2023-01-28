@@ -504,8 +504,7 @@ bool populateConfigOffsets(ebpfConfig *c, const char *argv[],
     unsigned int *item = NULL;
     char *outerStrtok = NULL;
 
-    config = fopen(BTF_KERNEL_FILE, "r");
-    if(!config)
+    if(!fileExists(BTF_KERNEL_FILE))
     {
         config = fopen(CONFIG_FILE, "r");
         if (!config) {
@@ -542,14 +541,14 @@ bool populateConfigOffsets(ebpfConfig *c, const char *argv[],
             if (item)
                 insertConfigOffsets(item, value);
         }
+
+        free(line);
+        fclose(config);
     }
     else
     {
         fprintf(stderr, "Discovery process: BTF-CORE\n");
     }
-
-    free(line);
-    fclose(config);
 
     return true;
 }
