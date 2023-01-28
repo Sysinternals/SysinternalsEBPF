@@ -94,6 +94,8 @@ extern char _binary_src_bpf_helpers_h_start[];
 extern char _binary_src_bpf_helpers_h_end[];
 extern char _binary_src_bpf_helper_defs_h_start[];
 extern char _binary_src_bpf_helper_defs_h_end[];
+extern char _binary_src_bpf_core_read_h_start[];
+extern char _binary_src_bpf_core_read_h_end[];
 
 mode_t dirMode = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
 mode_t fileMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
@@ -311,6 +313,13 @@ int main(int argc, char *argv[])
     if (!dropFile(LIBBPF_DIR "/bpf_helper_defs.h",
         _binary_src_bpf_helper_defs_h_start,
         _binary_src_bpf_helper_defs_h_end,
+        force,
+        fileMode))
+        return 1;
+
+    if (!dropFile(LIBBPF_DIR "/bpf_core_read.h",
+        _binary_src_bpf_core_read_h_start,
+        _binary_src_bpf_core_read_h_end,
         force,
         fileMode))
         return 1;
