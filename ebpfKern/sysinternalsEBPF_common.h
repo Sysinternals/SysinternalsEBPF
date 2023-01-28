@@ -52,7 +52,7 @@
 #ifdef DEBUG_K
 #define BPF_PRINTK( format, ... ) \
     char fmt[] = format; \
-    bpf_trace_printk(fmt, sizeof(fmt), ##__VA_ARGS__ ); 
+    bpf_trace_printk(fmt, sizeof(fmt), ##__VA_ARGS__ );
 #else
 #define BPF_PRINTK ((void)0);
 #endif
@@ -143,7 +143,7 @@ struct {
     __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
     __uint(key_size, sizeof(int));
     __uint(value_size, sizeof(uint32_t));
-    __uint(max_entries, MAX_PROC);    
+    __uint(max_entries, MAX_PROC);
 } eventMap SEC(".maps");
 
 
@@ -155,7 +155,7 @@ struct {
     .value_size = sizeof(ebpfConfig),
     .max_entries = 1,
 };*/
- 
+
 struct {
     __uint(type, BPF_MAP_TYPE_ARRAY);
     __type(key, uint32_t);

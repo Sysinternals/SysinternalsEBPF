@@ -37,6 +37,8 @@
 #define CONFIG_FILE SYSINTERNALS_EBPF_INSTALL_DIR "/sysinternalsEBPF_offsets.conf"
 #define OFFSETS_DB_FILE SYSINTERNALS_EBPF_INSTALL_DIR "/offsets.json"
 
+#define BTF_KERNEL_FILE "/sys/kernel/btf/vmlinux"
+
 // if we don't receive an event within the RESTART_TIMEOUT, we restart
 #define RESTART_TIMEOUT 300
 

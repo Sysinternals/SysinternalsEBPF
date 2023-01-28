@@ -182,7 +182,7 @@ const char *eBPFstrerror(int error)
 //--------------------------------------------------------------------
 void telemetryCloseAll()
 {
-    
+
     unsigned int i, j;
 
     if (!rawTracepoints) {
@@ -382,7 +382,7 @@ void telemetryUpdateSyscalls(bool *activeSyscalls)
 // (Enables skb/consume_skb tracepoint to see outbound packets.)
 //
 //--------------------------------------------------------------------
-bool connectRawSock()
+bool connectRawSock(const ebpfTelemetryConfig *ebpfConfig)
 {
     char filepath[] = SYSINTERNALS_EBPF_INSTALL_DIR "/" EBPF_RAW_SOCK_OBJ;
     struct stat filepathStat;
@@ -395,7 +395,14 @@ bool connectRawSock()
         return false;
     }
 
-    rawBpfObj = bpf_object__open(filepath);
+    struct bpf_object_open_opts openopts = {};
+    openopts.sz = sizeof(struct bpf_object_open_opts);
+    if(ebpfConfig->btfFile)
+    {
+        openopts.btf_custom_path = ebpfConfig->btfFile;
+    }
+
+    rawBpfObj = bpf_object__open_file(filepath, &openopts);
     if (libbpf_get_error(bpfObj)) {
         fprintf(stderr, "ERROR: failed to open prog: %s '%s'\n", filepath, strerror(errno));
         return false;
@@ -497,36 +504,48 @@ bool populateConfigOffsets(ebpfConfig *c, const char *argv[],
     unsigned int *item = NULL;
     char *outerStrtok = NULL;
 
-    config = fopen(CONFIG_FILE, "r");
-    if (!config) {
-        if (searchOffsets(&c->offsets)) {
-            fprintf(stderr, "Using kernel offsets from database\n");
-            return true;
+    config = fopen(BTF_KERNEL_FILE, "r");
+    if(!config)
+    {
+        config = fopen(CONFIG_FILE, "r");
+        if (!config) {
+            if (searchOffsets(&c->offsets)) {
+                fprintf(stderr, "Discovery process: from database\n");
+                return true;
+            }
+
+            fprintf(stderr, "Discovery process: auto discovery\n");
+            return (discoverOffsets(&c->offsets, argv, procStartTime) == E_EBPF_SUCCESS);
         }
-        return (discoverOffsets(&c->offsets, argv, procStartTime) == E_EBPF_SUCCESS);
+
+        fprintf(stderr, "Discovery process: getOffsets\n");
+
+        while ((readLen = getline(&line, &len, config)) >= 0) {
+            if (readLen > 0 && line[0] == '#')
+                continue;
+            whitespace = line;
+            while (*whitespace == ' ')
+                whitespace++;
+            param = strtok_r(whitespace, " =", &outerStrtok);
+            if (!param)
+                continue;
+            value = strtok_r(NULL, "\n", &outerStrtok);
+            if (!value)
+                continue;
+            whitespace = value;
+            while (*whitespace == ' ' || *whitespace == '=')
+                whitespace++;
+            value = whitespace;
+
+            item = findConfigItem(&c->offsets, param);
+
+            if (item)
+                insertConfigOffsets(item, value);
+        }
     }
-
-    while ((readLen = getline(&line, &len, config)) >= 0) {
-        if (readLen > 0 && line[0] == '#')
-            continue;
-        whitespace = line;
-        while (*whitespace == ' ')
-            whitespace++;
-        param = strtok_r(whitespace, " =", &outerStrtok);
-        if (!param)
-            continue;
-        value = strtok_r(NULL, "\n", &outerStrtok);
-        if (!value)
-            continue;
-        whitespace = value;
-        while (*whitespace == ' ' || *whitespace == '=')
-            whitespace++;
-        value = whitespace;
-
-        item = findConfigItem(&c->offsets, param);
-
-        if (item)
-            insertConfigOffsets(item, value);
+    else
+    {
+        fprintf(stderr, "Discovery process: BTF-CORE\n");
     }
 
     free(line);
@@ -1094,7 +1113,7 @@ bool populateOtherMaps(int *fds, const unsigned int numMapObjects,
         // populate the map
         for (j=0; j<mapObjects[i].numElements; j++) {
             if (bpf_map_update_elem(fds[i], mapObjects[i].keys[j], mapObjects[i].values[j], BPF_ANY)) {
-                fprintf(stderr, "ERROR: failed to set map element %d for map '%s': '%s'\n", 
+                fprintf(stderr, "ERROR: failed to set map element %d for map '%s': '%s'\n",
                         j, mapObjects[i].name, strerror(errno));
                 return false;
             }
@@ -1208,10 +1227,15 @@ void checkPerfErrors()
     }
 }
 
+//--------------------------------------------------------------------
+//
+// libbpf_print_fn
+//
+// Callback invoked by libbpf for logging
+//
+//--------------------------------------------------------------------
 static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
 {
-//	if (level == LIBBPF_DEBUG && !env.verbose)
-//		return 0;
 	return vfprintf(stderr, format, args);
 }
 
@@ -1246,10 +1270,22 @@ int ebpfStart(
     perfError                   perfIndex;
     uint32_t                    perfIndexIndex;
     struct bpf_program *prog;
+    struct bpf_object_open_opts openopts = {};
 
-    libbpf_set_print(libbpf_print_fn);
+    // If debug was specified, add extended eBPF logging
+    if(ebpfConfig->debug)
+    {
+        libbpf_set_print(libbpf_print_fn);
+    }
 
-    bpfObj = bpf_object__open(filepath);
+    // If we have a standalone BTF file, use it.
+    openopts.sz = sizeof(struct bpf_object_open_opts);
+    if(ebpfConfig->btfFile)
+    {
+        openopts.btf_custom_path = ebpfConfig->btfFile;
+    }
+
+    bpfObj = bpf_object__open_file(filepath, &openopts);
     if (libbpf_get_error(bpfObj)) {
         fprintf(stderr, "ERROR: failed to open prog: %s '%s'\n", filepath, strerror(errno));
         return E_EBPF_NOPROG;
@@ -1341,7 +1377,7 @@ int ebpfStart(
     }
 
     // set up perf ring buffer
-    pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, eventCb, (EventLostCallback_u64 *)eventsLostCb, context, /*&pbOpts*/ NULL); // param 2 is page_cnt == number of pages to mmap.    
+    pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, eventCb, (EventLostCallback_u64 *)eventsLostCb, context, /*&pbOpts*/ NULL); // param 2 is page_cnt == number of pages to mmap.
     //pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, &pbOpts); // param 2 is page_cnt == number of pages to mmap.
     ret = libbpf_get_error(pb);
     if (ret) {
@@ -1368,7 +1404,7 @@ int ebpfStart(
 
     // enable raw socket if required
     if (ebpfConfig->enableRawSockCapture) {
-        if (!connectRawSock()) {
+        if (!connectRawSock(ebpfConfig)) {
             fprintf(stderr, "ERROR: failed to enable raw socket capture\n");
             return E_EBPF_NORAWSOCK;
         }

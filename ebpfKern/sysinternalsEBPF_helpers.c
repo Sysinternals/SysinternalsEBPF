@@ -477,7 +477,7 @@ static inline uint32_t fdToPath(char *fdPath, int fd, const void *task, const eb
         if (!vfsmount)
             return 0;
 #else
-        path = derefMember(task, config->offsets.fd_path);
+        path = (void*) derefMember(task, config->offsets.fd_path);
         if (!path)
             return 0;
         if (bpf_probe_read(&dentry, sizeof(dentry), path + config->offsets.path_dentry[0]) != READ_OKAY)

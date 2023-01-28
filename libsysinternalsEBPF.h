@@ -175,6 +175,8 @@ typedef struct {
     const char                      **defaultPaths;
     const unsigned int              numMapObjects;
     const ebpfTelemetryMapObject    *mapObjects;
+    const char                      *btfFile;
+    const bool                      debug;
 } ebpfTelemetryConfig;
 
 
