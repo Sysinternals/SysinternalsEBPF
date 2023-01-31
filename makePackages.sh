@@ -69,7 +69,7 @@ cp "${PROJECT_BINARY_DIR}/libsysinternalsEBPFinstaller" "${PROJECT_BINARY_DIR}/d
 # make the deb
 if [ "$DPKGDEB" != "" ]; then
     cd "${PROJECT_BINARY_DIR}/deb"
-    "$DPKGDEB" --build --root-owner-group "${DEB_PACKAGE_NAME}"
+    "$DPKGDEB" -Zxz --build --root-owner-group "${DEB_PACKAGE_NAME}"
 else
     echo "No dpkg-deb found"
 fi
@@ -80,7 +80,6 @@ cp -a "${PROJECT_BINARY_DIR}/SPECSRPM.spec" "${PROJECT_BINARY_DIR}/rpm/${RPM_PAC
 mkdir "${PROJECT_BINARY_DIR}/rpm/${RPM_PACKAGE_NAME}/BUILD/"
 cp "${CMAKE_SOURCE_DIR}/package/usr/share/man/man3/sysinternalsebpf.3.gz" "${PROJECT_BINARY_DIR}/libsysinternalsEBPFinstaller" "${PROJECT_BINARY_DIR}/libsysinternalsEBPF.so" "${PROJECT_BINARY_DIR}/rpm/${RPM_PACKAGE_NAME}/BUILD/"
 
-# make the rpm
 if [ "$RPMBUILD" != "" ]; then
     cd "${PROJECT_BINARY_DIR}/rpm/${RPM_PACKAGE_NAME}"
     "$RPMBUILD" --define "_topdir `pwd`" -v -bb "SPECS/${RPM_PACKAGE_NAME}.spec"
