@@ -1414,6 +1414,47 @@ int ebpfStart(
 
 //--------------------------------------------------------------------
 //
+// getEbpfProgramSizes
+//
+// Returns the total number of programs in the object file and the
+// program names and sizes in the out param
+//
+//--------------------------------------------------------------------
+unsigned int getEbpfProgramSizes(char* objectPath, ebpfProgramSizes** progs)
+{
+    struct bpf_object* bpfObj = NULL;
+    struct bpf_program* bpfProg = NULL;
+    int progCount=0;
+
+    bpfObj = bpf_object__open(objectPath);
+    if(bpfObj!=NULL)
+    {
+        bpf_object__for_each_program(bpfProg, bpfObj)
+        {
+            progCount++;
+        }
+
+        if(progCount>0)
+        {
+            *progs = (ebpfProgramSizes*)calloc(sizeof(ebpfProgramSizes), progCount);
+            if(*progs)
+            {
+                progCount=0;
+                bpf_object__for_each_program(bpfProg, bpfObj)
+                {
+                    strcpy((*progs)[progCount].name, bpf_program__name(bpfProg));
+                    (*progs)[progCount].size = bpf_program__insn_cnt(bpfProg);
+                    progCount++;
+                }
+            }
+        }
+    }
+
+    return progCount;
+}
+
+//--------------------------------------------------------------------
+//
 // telemetryStart
 //
 // The external-facing API for starting the eBPF telemetry.

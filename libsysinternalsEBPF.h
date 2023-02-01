@@ -179,6 +179,10 @@ typedef struct {
     const bool                      debug;
 } ebpfTelemetryConfig;
 
+typedef struct {
+    char name[PATH_MAX];
+    size_t size;
+} ebpfProgramSizes;
 
 //
 // EventCallback and EventLostCallback handle the events produced by the perf
@@ -213,6 +217,8 @@ int telemetryStart(
     const char *argv[],
     int *fds
     );
+
+unsigned int getEbpfProgramSizes(char* objectPath, ebpfProgramSizes** progs);
 const char *eBPFstrerror(int error);
 void telemetryCloseAll(void);
 void telemetrySignalInterrupt(int code);
