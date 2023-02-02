@@ -76,7 +76,7 @@ fi
 
 # copy rpm files
 mkdir -p "${PROJECT_BINARY_DIR}/rpm/${RPM_PACKAGE_NAME}/SPECS"
-cp -a "${PROJECT_BINARY_DIR}/SPECSRPM.spec" "${PROJECT_BINARY_DIR}/rpm/${RPM_PACKAGE_NAME}/SPECS/${RPM_PACKAGE_NAME}.spec"
+cp -a "${PROJECT_BINARY_DIR}/SPECS.spec" "${PROJECT_BINARY_DIR}/rpm/${RPM_PACKAGE_NAME}/SPECS/${RPM_PACKAGE_NAME}.spec"
 mkdir "${PROJECT_BINARY_DIR}/rpm/${RPM_PACKAGE_NAME}/BUILD/"
 cp "${CMAKE_SOURCE_DIR}/package/usr/share/man/man3/sysinternalsebpf.3.gz" "${PROJECT_BINARY_DIR}/libsysinternalsEBPFinstaller" "${PROJECT_BINARY_DIR}/libsysinternalsEBPF.so" "${PROJECT_BINARY_DIR}/rpm/${RPM_PACKAGE_NAME}/BUILD/"
 

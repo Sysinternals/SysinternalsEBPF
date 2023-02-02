@@ -231,6 +231,8 @@ bool fileExists(const char *filepath);
 bool dirExists(const char *dirpath);
 bool createDir(const char *dir, mode_t perms);
 bool dropFile(const char *filepath, const char *start, const char *end, bool force, mode_t perms);
+char* getLibInstallPath();
+bool fileDelete(const char *filepath);
 
 
 #endif

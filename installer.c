@@ -39,6 +39,25 @@
 #include <string.h>
 #include <dirent.h>
 
+
+//--------------------------------------------------------------------
+//
+// fileDelete
+//
+// Deletes specified file
+//
+//--------------------------------------------------------------------
+bool fileDelete(const char *filepath)
+{
+    if (filepath == NULL) {
+        fprintf(stderr, "fileDelete invalid params\n");
+        return false;
+    }
+
+    return unlink(filepath) < 0 ? false : true;
+}
+
+
 //--------------------------------------------------------------------
 //
 // fileExists

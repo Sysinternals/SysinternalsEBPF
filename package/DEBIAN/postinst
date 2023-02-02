@@ -1,4 +1,5 @@
 #!/bin/sh
 
-/usr/bin/libsysinternalsEBPFinstaller
+/usr/bin/libsysinternalsEBPFinstaller -i
+ldconfig
 

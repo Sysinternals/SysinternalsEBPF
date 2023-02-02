@@ -82,8 +82,8 @@ Or:
 ```
 sudo make install
 ```
-The shared library will be installed to /usr/lib; the header to
-/usr/include; the offsets database and EBPF objects to
+The shared library will be installed to /lib/x86_64-linux-gnu or /lib64 or /usr/lib.;
+the header to /usr/include; the offsets database and EBPF objects to
 /opt/sysinternalsEBPF.  The libsysinternalsEBPFinstaller binary will also be
 installed in /opt/sysinternalsEBPF (which can be copied to another system and
 run to install sysinternalsEBPF there). *Note:* 'sudo make install' will use
