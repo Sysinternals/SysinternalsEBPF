@@ -211,6 +211,8 @@ char* getLibInstallPath()
             fullPath[0]='/';
             fullPath[1]=0;
 
+            memset(libPath, 0, PATH_MAX);                   // readlink does not null terminate
+
             if (readlink(LIB64_SYM_LNK, libPath, PATH_MAX))
             {
                 strcat(fullPath, libPath);
