@@ -209,6 +209,7 @@ char* getLibInstallPath()
         {
             // check if fedora based
             fullPath[0]='/';
+            fullPath[1]=0;
 
             if (readlink(LIB64_SYM_LNK, libPath, PATH_MAX))
             {
