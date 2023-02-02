@@ -189,31 +189,35 @@ char* getLibInstallPath()
 
     if (readlink(LIB_SYM_LNK, libPath, PATH_MAX) <= 0)
     {
-        if (readlink(LIB64_SYM_LNK, libPath, PATH_MAX))
+        // if no symlink it's an old distro, just use /usr/lib
+        if (dirExists(LIB_DEST))
         {
-            strcat(libPath, SYSINTERNALSEBPF_LIB);
-            strcat(fullPath, libPath);
+            strcpy(fullPath, LIB_DEST);
         }
         else
         {
-            if (dirExists(LIB_DEST))
-            {
-                strcpy(fullPath, LIB_DEST);
-            }
-            else
-            {
-                return NULL;
-            }
+            return NULL;
         }
     }
     else
     {
+        // check if debian based
         strcat(libPath, DEB_x86_64);
         strcat(fullPath, libPath);
 
         if (!dirExists(fullPath))
         {
-            return NULL;
+            // check if fedora based
+            fullPath[0]='/';
+
+            if (readlink(LIB64_SYM_LNK, libPath, PATH_MAX))
+            {
+                strcat(fullPath, libPath);
+            }
+            else
+            {
+                return NULL;
+            }
         }
     }
 
