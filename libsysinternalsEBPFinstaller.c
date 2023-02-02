@@ -182,8 +182,8 @@ int delDir(char* path)
 //--------------------------------------------------------------------
 char* getLibInstallPath()
 {
-    char libPath[PATH_MAX];
-    char fullPath[PATH_MAX];
+    char libPath[PATH_MAX] = {0};
+    char fullPath[PATH_MAX] = {0};
 
     fullPath[0]='/';
 
