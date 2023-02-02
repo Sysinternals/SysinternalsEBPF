@@ -13,6 +13,8 @@ A shared library and code library for making eBPF programs
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/%{_bindir}
 cp libsysinternalsEBPFinstaller $RPM_BUILD_ROOT/%{_bindir}
+mkdir -p $RPM_BUILD_ROOT/opt/sysinternalsEBPF
+cp libsysinternalsEBPF.so $RPM_BUILD_ROOT/opt/sysinternalsEBPF
 mkdir -p $RPM_BUILD_ROOT/usr/share/man/man3
 cp sysinternalsebpf.3.gz $RPM_BUILD_ROOT/usr/share/man/man3
 
@@ -21,7 +23,14 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %{_bindir}/libsysinternalsEBPFinstaller
+/opt/sysinternalsEBPF/libsysinternalsEBPF.so
 /usr/share/man/man3/sysinternalsebpf.3.gz
 
+%post
+/usr/bin/libsysinternalsEBPFinstaller -i
+ldconfig
 
+%preun
+/usr/bin/libsysinternalsEBPFinstaller -u
+ldconfig
 
