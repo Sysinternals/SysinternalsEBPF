@@ -38,13 +38,6 @@
 // Create a map to hold the memory dump configuration.
 // Only one entry, which is the config struct
 //
-/*struct bpf_map_def SEC("maps") memDumpConfigMap = {
-    .type = BPF_MAP_TYPE_ARRAY,
-    .key_size = sizeof(uint32_t),
-    .value_size = sizeof(memDumpConfig),
-    .max_entries = 1,
-};*/
-
 struct {
     __uint(type, BPF_MAP_TYPE_ARRAY);
     __uint(key_size, sizeof(uint32_t));
@@ -56,13 +49,6 @@ struct {
 // Create a map to hold the mem dump event as we build it - too big for stack.
 // One entry per cpu
 //
-/*struct bpf_map_def SEC("maps") memDumpStorageMap = {
-    .type = BPF_MAP_TYPE_ARRAY,
-    .key_size = sizeof(uint32_t),
-    .value_size = sizeof(memDump),
-    .max_entries = MAX_PROC,
-};*/
-
 struct {
     __uint(type, BPF_MAP_TYPE_ARRAY);
     __uint(key_size, sizeof(uint32_t));

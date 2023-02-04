@@ -1,8 +1,6 @@
 # Build
 
 ## Prerequisites
-SysinternalsEBPF build instructions depend on:
-
 - clang/llvm v10+
 
 
@@ -82,11 +80,11 @@ Or:
 ```
 sudo make install
 ```
-The shared library will be installed to /lib/x86_64-linux-gnu or /lib64 or /usr/lib.;
-the header to /usr/include; the offsets database and EBPF objects to
-/opt/sysinternalsEBPF.  The libsysinternalsEBPFinstaller binary will also be
-installed in /opt/sysinternalsEBPF (which can be copied to another system and
-run to install sysinternalsEBPF there). *Note:* 'sudo make install' will use
+The shared library will be installed to /lib/x86_64-linux-gnu (Debian) or
+/lib64 (Fedora) or /usr/lib (pre multi arch Debian).; the header to /usr/include;
+the offsets database and EBPF objects to /opt/sysinternalsEBPF.  The libsysinternalsEBPFinstaller
+ binary will also be installed in /opt/sysinternalsEBPF (which can be copied to another
+  system and run to install sysinternalsEBPF there). *Note:* 'sudo make install' will use
 the binary, include, and lib directories that cmake prefers or you have
 overridden, whereas the installer and the packages (see below) use the paths
 specified above.

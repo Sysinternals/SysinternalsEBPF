@@ -1268,8 +1268,7 @@ int ebpfStart(
     int                         ret;
     perfError                   perfIndex;
     uint32_t                    perfIndexIndex;
-    struct bpf_program *prog;
-    struct bpf_object_open_opts openopts = {};
+    struct                      bpf_object_open_opts openopts = {};
 
     // If debug was specified, add extended eBPF logging
     if(ebpfConfig->debug)
@@ -1305,15 +1304,6 @@ int ebpfStart(
     if (numOtherTp > 0) {
         // other tracepoints
         if (!locateOtherTPprogs(object)) {
-
-            bpf_object__for_each_program(prog, bpfObj) {
-                    const char *name = bpf_program__name(prog);
-
-                    fprintf(stderr, "Prog enum: '%s'\n", name);
-            }
-
-
-
             return E_EBPF_NOOTHTP;
         }
     }
@@ -1377,7 +1367,6 @@ int ebpfStart(
 
     // set up perf ring buffer
     pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, eventCb, (EventLostCallback_u64 *)eventsLostCb, context, /*&pbOpts*/ NULL); // param 2 is page_cnt == number of pages to mmap.
-    //pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, &pbOpts); // param 2 is page_cnt == number of pages to mmap.
     ret = libbpf_get_error(pb);
     if (ret) {
         fprintf(stderr, "ERROR: failed to setup perf_buffer: %d\n", ret);

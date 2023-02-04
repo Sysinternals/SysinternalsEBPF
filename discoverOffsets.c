@@ -1785,7 +1785,7 @@ int discoverOffsets(
 
     memset(memDumps, 0, sizeof(memDumps));
     memset(offsets, 0xFF, sizeof(*offsets));
- 
+
     if (setsid() < 0) {
         fprintf(stderr, "sedsid() failed.\n");
         return E_DISC_CATASTROPHIC;
@@ -1804,7 +1804,7 @@ int discoverOffsets(
     if (sscanf(unameStruct.release, "%u.%u", &major, &minor) != 2) {
         fprintf(stderr, "Couldn't find version\n");
         return E_DISC_CATASTROPHIC;
-    }    
+    }
 
     // <  4.15, no ebpf support due to no direct r/w access to maps
     if ((major < 4) || (major == 4 && minor < 15)) {
@@ -1867,7 +1867,6 @@ int discoverOffsets(
         return E_DISC_NOATTACH;
 
     pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, memDumpEventCb, NULL, NULL, NULL); // param 2 is page_cnt == number of pages to mmap.
-    //pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, &pbOpts); // param 2 is page_cnt == number of pages to mmap.
     ret = libbpf_get_error(pb);
     if (ret) {
         fprintf(stderr, "ERROR: failed to setup perf_buffer: %d\n", ret);

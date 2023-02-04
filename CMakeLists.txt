@@ -56,8 +56,8 @@ configure_file(package/SPECS.in/spec.in SPECS.spec)
 #
 # enable Debug while pre-release; re-enable it post-release to add symbols to binary
 #
-set(CMAKE_BUILD_TYPE Debug)
-option(DEBUG_K "Enter debug mode" On)
+#set(CMAKE_BUILD_TYPE Debug)
+#option(DEBUG_K "Enter debug mode" On)
 
 #
 # external programs used by this build
@@ -71,6 +71,7 @@ set(PACKAGE_NAME "sysinternalsebpf")
 
 #
 # report warnings as errors
+# -g is required for BTF and CO:RE
 #
 add_compile_options(-Wall -Werror -g)
 

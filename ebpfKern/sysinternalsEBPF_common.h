@@ -130,15 +130,6 @@ struct tracepoint__syscalls__sys_exit {
 #endif
 
 // create a map to transport events to userland via perf ring buffer
-/*struct bpf_map_def SEC("maps") eventMap = {
-	.type = BPF_MAP_TYPE_PERF_EVENT_ARRAY, //BPF_MAP_TYPE_HASH doesnt stack....
-	.key_size = sizeof(int),
-	.value_size = sizeof(uint32_t),
-	.max_entries = MAX_PROC, // MAX_PROC CPUs - this needs to accommodate most systems as this is CO:RE-alike
-                        // Also, as this map is quite small (8 bytes per entry), we could potentially
-                        // make this event bigger and it woulnd't cost much
-};*/
-
 struct {
     __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
     __uint(key_size, sizeof(int));
@@ -149,13 +140,6 @@ struct {
 
 // create a map to hold the configuration
 // only one entry, which is the config struct
-/*struct bpf_map_def SEC("maps") configMap = {
-    .type = BPF_MAP_TYPE_ARRAY,
-    .key_size = sizeof(uint32_t),
-    .value_size = sizeof(ebpfConfig),
-    .max_entries = 1,
-};*/
-
 struct {
     __uint(type, BPF_MAP_TYPE_ARRAY);
     __type(key, uint32_t);
@@ -165,13 +149,6 @@ struct {
 
 // create a map to hold a temporary filepath as we build it - too big for stack
 // one entry per cpu
-/*struct bpf_map_def SEC("maps") temppathArray = {
-    .type = BPF_MAP_TYPE_ARRAY,
-    .key_size = sizeof(uint32_t),
-    .value_size = PATH_MAX * 2,
-    .max_entries = MAX_PROC,
-};*/
-
 struct {
     __uint(type, BPF_MAP_TYPE_ARRAY);
     __uint(key_size, sizeof(uint32_t));
@@ -181,13 +158,6 @@ struct {
 
 // create a hash to hold event arguments between sys_enter and sys_exit
 // shared by all cpus because sys_enter and sys_exit could be on different cpus
-/*struct bpf_map_def SEC("maps") argsHash = {
-    .type = BPF_MAP_TYPE_HASH,
-    .key_size = sizeof(uint64_t),
-    .value_size = sizeof(argsStruct),
-    .max_entries = ARGS_HASH_SIZE,
-};*/
-
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, ARGS_HASH_SIZE);
@@ -196,13 +166,6 @@ struct {
 } argsHash SEC(".maps");
 
 // create a map to hold perf_ring_buffer errors
-/*struct bpf_map_def SEC("maps") perfErrorsMap = {
-    .type = BPF_MAP_TYPE_ARRAY,
-    .key_size = sizeof(uint32_t),
-    .value_size = sizeof(perfError),
-    .max_entries = PERF_ERRORS_MAX + 2, // read and write indicies are at end
-};*/
-
 struct {
     __uint(type, BPF_MAP_TYPE_ARRAY);
     __type(key, uint32_t);

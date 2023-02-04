@@ -161,8 +161,7 @@ bool dropFile(const char *filepath, const char *start,
 
     unlink(filepath);
 
-    fd = open(filepath, O_WRONLY|O_CREAT|O_TRUNC, perms);
-    //fd = creat(filepath, perms);
+    fd = creat(filepath, perms);
     if (fd < 0) {
         fprintf(stderr, "Cannot write %s\n", filepath);
         return false;
