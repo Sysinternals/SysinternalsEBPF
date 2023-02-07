@@ -31,6 +31,8 @@ rm -rf $RPM_BUILD_ROOT
 ldconfig
 
 %preun
-/usr/bin/libsysinternalsEBPFinstaller -u
-ldconfig
+if [ $1 == 0 ];then
+    /usr/bin/libsysinternalsEBPFinstaller -u
+    ldconfig
+fi
 
