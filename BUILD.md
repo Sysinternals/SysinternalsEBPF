@@ -4,40 +4,18 @@
 - clang/llvm v10+
 
 
-### Ubuntu 22.04
+### Ubuntu
 ```
 sudo apt update
 sudo apt -y install build-essential gcc g++ make cmake libelf-dev llvm clang libzstd1 git libjson-glib-dev libc6-dev-i386
 ```
 
-### Ubuntu 20.04
-```
-sudo apt update
-sudo apt -y install build-essential gcc g++ make cmake libelf-dev llvm clang libzstd1 git libjson-glib-dev libc6-dev-i386
-```
-
-### Ubuntu 18.04
-```
-sudo apt update
-sudo apt -y install build-essential gcc g++ make cmake libelf-dev llvm clang libzstd1 git libjson-glib-dev libc6-dev-i386
-```
-
-### RHEL 9
+### Rocky Linux
 ```
 yum install gcc gcc-c++ make cmake llvm clang elfutils-libelf-devel rpm-build json-glib-devel python3 glibc-devel.i686
 ```
 
-### RHEL 8
-```
-yum install gcc gcc-c++ make cmake llvm clang elfutils-libelf-devel rpm-build json-glib-devel python3 glibc-devel.i686
-```
-
-### Debian 11
-```
-sudo apt -y install build-essential gcc g++ make cmake libelf-dev llvm clang libzstd1 git libjson-glib-dev libc6-dev-i386
-```
-
-### Debian 10
+### Debian
 ```
 sudo apt -y install build-essential gcc g++ make cmake libelf-dev llvm clang libzstd1 git libjson-glib-dev libc6-dev-i386
 ```
@@ -74,11 +52,12 @@ install sysinternalsEBPF onto a system.
 
 Either:
 ```
-sudo ./libsysinternalsEBPFinstaller
+sudo ./libsysinternalsEBPFinstaller -i
 ```
 Or:
 ```
 sudo make install
+sudo ldconfig
 ```
 The shared library will be installed to /lib/x86_64-linux-gnu (Debian) or
 /lib64 (Fedora) or /usr/lib (pre multi arch Debian).; the header to /usr/include;
