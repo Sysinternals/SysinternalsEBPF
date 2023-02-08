@@ -12,6 +12,9 @@ You can then generate a configuration file to override the autodiscovery by
 building the getOffsets module in the /opt/sysinternals/getOffsets directory.
 See the README.md in that directory for more information.
 
+If you define EBPF_CO_RE in your own eBPF programs that use SysinternalsEBPF, the
+library will use the CORE libbpf APIs.
+
 ## Manual Page
 A man page for SysinternalsEBPF can be found in the package directory, and is
 installed by both deb and rpm packages.
