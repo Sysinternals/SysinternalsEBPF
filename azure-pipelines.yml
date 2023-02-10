@@ -15,15 +15,15 @@ trigger:
       exclude:
         - dev/*
         - test/*
-  
+
 pr:
 - main
 
 stages:
  - stage: "Build"
-   jobs: 
+   jobs:
     - job: "Build_Sysinternalsebpf_Ubuntu_20_04_Package"
-      pool: 
+      pool:
         name: "Sysinternals-for-Linux-AME"
         demands:
         - ImageOverride -equals sysmon-ubuntu-build-agent
@@ -32,4 +32,6 @@ stages:
         persistCredentials: true
 
       - template: templates/build.yaml
+        parameters:
+          srcFolder: '.'
       displayName: "Build Sysinternalsebpf"
