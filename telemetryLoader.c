@@ -182,7 +182,7 @@ const char *eBPFstrerror(int error)
 //--------------------------------------------------------------------
 void telemetryCloseAll()
 {
-    
+
     unsigned int i, j;
 
     if (!rawTracepoints) {
@@ -382,7 +382,7 @@ void telemetryUpdateSyscalls(bool *activeSyscalls)
 // (Enables skb/consume_skb tracepoint to see outbound packets.)
 //
 //--------------------------------------------------------------------
-bool connectRawSock()
+bool connectRawSock(const ebpfTelemetryConfig *ebpfConfig)
 {
     char filepath[] = SYSINTERNALS_EBPF_INSTALL_DIR "/" EBPF_RAW_SOCK_OBJ;
     struct stat filepathStat;
@@ -395,13 +395,20 @@ bool connectRawSock()
         return false;
     }
 
-    rawBpfObj = bpf_object__open(filepath);
+    struct bpf_object_open_opts openopts = {};
+    openopts.sz = sizeof(struct bpf_object_open_opts);
+    if(ebpfConfig->btfFile)
+    {
+        openopts.btf_custom_path = ebpfConfig->btfFile;
+    }
+
+    rawBpfObj = bpf_object__open_file(filepath, &openopts);
     if (libbpf_get_error(bpfObj)) {
         fprintf(stderr, "ERROR: failed to open prog: %s '%s'\n", filepath, strerror(errno));
         return false;
     }
 
-    rawBpfProg = bpf_object__find_program_by_title(rawBpfObj, "rawSock");
+    rawBpfProg = bpf_object__find_program_by_name(rawBpfObj, "rawEBPFprog");
     if (rawBpfProg == NULL) {
         fprintf(stderr, "ERROR: failed to locate program: %s '%s'\n", filepath, strerror(errno));
         return false;
@@ -497,40 +504,51 @@ bool populateConfigOffsets(ebpfConfig *c, const char *argv[],
     unsigned int *item = NULL;
     char *outerStrtok = NULL;
 
-    config = fopen(CONFIG_FILE, "r");
-    if (!config) {
-        if (searchOffsets(&c->offsets)) {
-            fprintf(stderr, "Using kernel offsets from database\n");
-            return true;
+    if(!fileExists(BTF_KERNEL_FILE))
+    {
+        config = fopen(CONFIG_FILE, "r");
+        if (!config) {
+            if (searchOffsets(&c->offsets)) {
+                fprintf(stderr, "Discovery process: from database\n");
+                return true;
+            }
+
+            fprintf(stderr, "Discovery process: auto discovery\n");
+            return (discoverOffsets(&c->offsets, argv, procStartTime) == E_EBPF_SUCCESS);
         }
-        return (discoverOffsets(&c->offsets, argv, procStartTime) == E_EBPF_SUCCESS);
+
+        fprintf(stderr, "Discovery process: getOffsets\n");
+
+        while ((readLen = getline(&line, &len, config)) >= 0) {
+            if (readLen > 0 && line[0] == '#')
+                continue;
+            whitespace = line;
+            while (*whitespace == ' ')
+                whitespace++;
+            param = strtok_r(whitespace, " =", &outerStrtok);
+            if (!param)
+                continue;
+            value = strtok_r(NULL, "\n", &outerStrtok);
+            if (!value)
+                continue;
+            whitespace = value;
+            while (*whitespace == ' ' || *whitespace == '=')
+                whitespace++;
+            value = whitespace;
+
+            item = findConfigItem(&c->offsets, param);
+
+            if (item)
+                insertConfigOffsets(item, value);
+        }
+
+        free(line);
+        fclose(config);
     }
-
-    while ((readLen = getline(&line, &len, config)) >= 0) {
-        if (readLen > 0 && line[0] == '#')
-            continue;
-        whitespace = line;
-        while (*whitespace == ' ')
-            whitespace++;
-        param = strtok_r(whitespace, " =", &outerStrtok);
-        if (!param)
-            continue;
-        value = strtok_r(NULL, "\n", &outerStrtok);
-        if (!value)
-            continue;
-        whitespace = value;
-        while (*whitespace == ' ' || *whitespace == '=')
-            whitespace++;
-        value = whitespace;
-
-        item = findConfigItem(&c->offsets, param);
-
-        if (item)
-            insertConfigOffsets(item, value);
+    else
+    {
+        fprintf(stderr, "Discovery process: BTF-CORE\n");
     }
-
-    free(line);
-    fclose(config);
 
     return true;
 }
@@ -695,7 +713,7 @@ bool locateTPprogs(const ebpfTelemetryObject *obj)
             unsigned int n = 0;
             for (n=0; n<7; n++) {
                 programName[programNameLen - 1] = '0' + n;
-                if ((s->prog[n] = bpf_object__find_program_by_title(bpfObj, programName)) == NULL) {
+                if ((s->prog[n] = bpf_object__find_program_by_name(bpfObj, programName)) == NULL) {
                     fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", programName, strerror(errno));
                     return false;
                 }
@@ -703,7 +721,7 @@ bool locateTPprogs(const ebpfTelemetryObject *obj)
             }
         } else {
             // attach this to specified enter tracepoint
-            if ((s->prog[0] = bpf_object__find_program_by_title(bpfObj, p->program)) == NULL) {
+            if ((s->prog[0] = bpf_object__find_program_by_name(bpfObj, p->program)) == NULL) {
                 fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
                 return false;
             }
@@ -739,7 +757,7 @@ bool locateTPprogs(const ebpfTelemetryObject *obj)
             return false;
         }
 
-        if ((s->prog[0] = bpf_object__find_program_by_title(bpfObj, p->program)) == NULL) {
+        if ((s->prog[0] = bpf_object__find_program_by_name(bpfObj, p->program)) == NULL) {
             fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
             return false;
         }
@@ -795,7 +813,7 @@ bool locateRTPprogs(const ebpfTelemetryObject *obj)
     // raw sys_enter tracepoint
     for (i=0; i<numRawSysEnter; i++) {
         const ebpfSyscallRTPprog *p = &obj->syscallRTPenterProgs[i];
-        if ((bpfRawSysEnter[i] = bpf_object__find_program_by_title(bpfObj, p->program)) == NULL) {
+        if ((bpfRawSysEnter[i] = bpf_object__find_program_by_name(bpfObj, p->program)) == NULL) {
             fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
             return false;
         }
@@ -804,7 +822,7 @@ bool locateRTPprogs(const ebpfTelemetryObject *obj)
 
     for (i=0; i<numRawSysExit; i++) {
         const ebpfSyscallRTPprog *p = &obj->syscallRTPexitProgs[i];
-        if ((bpfRawSysExit[i] = bpf_object__find_program_by_title(bpfObj, p->program)) == NULL) {
+        if ((bpfRawSysExit[i] = bpf_object__find_program_by_name(bpfObj, p->program)) == NULL) {
             fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
             return false;
         }
@@ -847,7 +865,7 @@ bool locateOtherTPprogs(const ebpfTelemetryObject *obj)
 
     for (i=0; i<numOtherTp; i++) {
         const ebpfTracepointProg *p = &obj->otherTPprogs[i];
-        if ((bpfOtherTp[i] = bpf_object__find_program_by_title(bpfObj, p->program)) == NULL) {
+        if ((bpfOtherTp[i] = bpf_object__find_program_by_name(bpfObj, p->program)) == NULL) {
             fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
             return false;
         }
@@ -1094,7 +1112,7 @@ bool populateOtherMaps(int *fds, const unsigned int numMapObjects,
         // populate the map
         for (j=0; j<mapObjects[i].numElements; j++) {
             if (bpf_map_update_elem(fds[i], mapObjects[i].keys[j], mapObjects[i].values[j], BPF_ANY)) {
-                fprintf(stderr, "ERROR: failed to set map element %d for map '%s': '%s'\n", 
+                fprintf(stderr, "ERROR: failed to set map element %d for map '%s': '%s'\n",
                         j, mapObjects[i].name, strerror(errno));
                 return false;
             }
@@ -1210,6 +1228,18 @@ void checkPerfErrors()
 
 //--------------------------------------------------------------------
 //
+// libbpf_print_fn
+//
+// Callback invoked by libbpf for logging
+//
+//--------------------------------------------------------------------
+static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
+{
+	return vfprintf(stderr, format, args);
+}
+
+//--------------------------------------------------------------------
+//
 // ebpfStart
 //
 // Start up the eBPF telemetry engine.
@@ -1238,8 +1268,22 @@ int ebpfStart(
     int                         ret;
     perfError                   perfIndex;
     uint32_t                    perfIndexIndex;
+    struct                      bpf_object_open_opts openopts = {};
 
-    bpfObj = bpf_object__open(filepath);
+    // If debug was specified, add extended eBPF logging
+    if(ebpfConfig->debug)
+    {
+        libbpf_set_print(libbpf_print_fn);
+    }
+
+    // If we have a standalone BTF file, use it.
+    openopts.sz = sizeof(struct bpf_object_open_opts);
+    if(ebpfConfig->btfFile)
+    {
+        openopts.btf_custom_path = ebpfConfig->btfFile;
+    }
+
+    bpfObj = bpf_object__open_file(filepath, &openopts);
     if (libbpf_get_error(bpfObj)) {
         fprintf(stderr, "ERROR: failed to open prog: %s '%s'\n", filepath, strerror(errno));
         return E_EBPF_NOPROG;
@@ -1322,10 +1366,7 @@ int ebpfStart(
     }
 
     // set up perf ring buffer
-    pbOpts.sample_cb = eventCb;
-    pbOpts.lost_cb = (EventLostCallback_u64 *)eventsLostCb;
-    pbOpts.ctx = context;
-    pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, &pbOpts); // param 2 is page_cnt == number of pages to mmap.
+    pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, eventCb, (EventLostCallback_u64 *)eventsLostCb, context, /*&pbOpts*/ NULL); // param 2 is page_cnt == number of pages to mmap.
     ret = libbpf_get_error(pb);
     if (ret) {
         fprintf(stderr, "ERROR: failed to setup perf_buffer: %d\n", ret);
@@ -1351,13 +1392,54 @@ int ebpfStart(
 
     // enable raw socket if required
     if (ebpfConfig->enableRawSockCapture) {
-        if (!connectRawSock()) {
+        if (!connectRawSock(ebpfConfig)) {
             fprintf(stderr, "ERROR: failed to enable raw socket capture\n");
             return E_EBPF_NORAWSOCK;
         }
     }
 
     return E_EBPF_SUCCESS;
+}
+
+//--------------------------------------------------------------------
+//
+// getEbpfProgramSizes
+//
+// Returns the total number of programs in the object file and the
+// program names and sizes in the out param
+//
+//--------------------------------------------------------------------
+unsigned int getEbpfProgramSizes(char* objectPath, ebpfProgramSizes** progs)
+{
+    struct bpf_object* bpfObj = NULL;
+    struct bpf_program* bpfProg = NULL;
+    int progCount=0;
+
+    bpfObj = bpf_object__open(objectPath);
+    if(bpfObj!=NULL)
+    {
+        bpf_object__for_each_program(bpfProg, bpfObj)
+        {
+            progCount++;
+        }
+
+        if(progCount>0)
+        {
+            *progs = (ebpfProgramSizes*)calloc(sizeof(ebpfProgramSizes), progCount);
+            if(*progs)
+            {
+                progCount=0;
+                bpf_object__for_each_program(bpfProg, bpfObj)
+                {
+                    strcpy((*progs)[progCount].name, bpf_program__name(bpfProg));
+                    (*progs)[progCount].size = bpf_program__insn_cnt(bpfProg);
+                    progCount++;
+                }
+            }
+        }
+    }
+
+    return progCount;
 }
 
 //--------------------------------------------------------------------

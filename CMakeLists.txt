@@ -46,7 +46,7 @@ cmake_policy(SET CMP0048 NEW)
 # set the project name - version is MAJOR.MINOR.PATCH.RELEASE - releases start at 1
 if (DEFINED ENV{VERSION})
   project(SysinternalsEBPF VERSION $ENV{VERSION})
-else()  
+else()
   project(SysinternalsEBPF VERSION 0.0.0.0)
 endif()
 
@@ -71,8 +71,9 @@ set(PACKAGE_NAME "sysinternalsebpf")
 
 #
 # report warnings as errors
+# -g is required for BTF and CO:RE
 #
-add_compile_options(-Wall -Werror)
+add_compile_options(-Wall -Werror -g)
 
 include(ExternalProject)
 
@@ -81,7 +82,7 @@ include(ExternalProject)
 ExternalProject_Add(libbpf
     GIT_REPOSITORY https://github.com/libbpf/libbpf.git
 #    GIT_TAG master
-    GIT_TAG v0.1.0
+    GIT_TAG v1.1.0
     PREFIX ./libbpf
     CONFIGURE_COMMAND ""
     BUILD_COMMAND cd ../libbpf/src && bash -c "CFLAGS=\"-g -O2 -Werror -Wall -fPIC\" make"
@@ -153,9 +154,10 @@ add_executable(libsysinternalsEBPFinstaller
     ebpfKern-LICENSE.o
     ebpfKern-sysinternalsEBPF_common.h.o
     ebpfKern-sysinternalsEBPF_helpers.c.o
-    libbpf-LICENSE.LPGL-2.1.o
+    libbpf-LICENSE.LGPL-2.1.o
     libbpf-src-bpf_helpers.h.o
     libbpf-src-bpf_helper_defs.h.o
+    libbpf-src-bpf_core_read.h.o
 )
 
 add_custom_target(packages
@@ -188,12 +190,13 @@ set(PACKED_EBPFKERN_FILES
     )
 
 set(PACKED_LIBBPF_FILES
-    LICENSE.LPGL-2.1
+    LICENSE.LGPL-2.1
     )
 
 set(PACKED_LIBBPF_SRC_FILES
     bpf_helpers.h
     bpf_helper_defs.h
+    bpf_core_read.h
     )
 
 set(PACKED_BINARY_FILES
@@ -288,9 +291,10 @@ install(FILES
 )
 
 install(FILES
-            "${libbpf_SOURCE_DIR}/LICENSE.LPGL-2.1"
+            "${libbpf_SOURCE_DIR}/LICENSE.LGPL-2.1"
             "${libbpf_SOURCE_DIR}/src/bpf_helpers.h"
             "${libbpf_SOURCE_DIR}/src/bpf_helper_defs.h"
+            "${libbpf_SOURCE_DIR}/src/bpf_core_read.h"
         DESTINATION /opt/sysinternalsEBPF/libbpf
         PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
 )
@@ -376,6 +380,7 @@ set(CLANG_OPTIONS -Wno-unused-value
                   -Wno-address-of-packed-member
                   -Wno-tautological-compare
                   -Wno-unknown-warning-option
+                  -g
                   )
 set(CLANG_DEFINES -D __KERNEL__
                   -D __BPF_TRACING__
@@ -386,7 +391,7 @@ if (DEBUG_K)
     list(APPEND CLANG_DEFINES -DDEBUG_K)
 endif()
 
-set(CLANG_INCLUDES 
+set(CLANG_INCLUDES
                    -I "/usr/include"
                    -I "/usr/include/x86_64-linux-gnu"
                    -I "${CMAKE_SOURCE_DIR}"
@@ -404,7 +409,7 @@ set(CLANG_INCLUDES
 function(build_ebpf ebpfsrc)
     add_custom_command(TARGET sysinternalsEBPF
                        PRE_BUILD
-                       COMMAND "${CLANG}" -nostdinc -isystem `gcc -print-file-name=include` ${CLANG_INCLUDES} ${CLANG_DEFINES} -O2 ${CLANG_OPTIONS} -emit-llvm -c "${CMAKE_SOURCE_DIR}/ebpfKern/${ebpfsrc}.c" -o -| "${LLC}" -march=bpf -filetype=obj -o "${ebpfsrc}.o"
+                       COMMAND "${CLANG}" -nostdinc -isystem `gcc -print-file-name=include` ${CLANG_INCLUDES} ${CLANG_DEFINES} -O2 ${CLANG_OPTIONS} -target bpf -c "${CMAKE_SOURCE_DIR}/ebpfKern/${ebpfsrc}.c" -o "${ebpfsrc}.o"
                        COMMENT "Building EBPF object ${ebpfsrc}.o"
                        DEPENDS ebpfKern/${ebpfsrc}.c ${EBPF_DEPENDS}
                        )
@@ -412,7 +417,7 @@ endfunction()
 
 # loop for all ebpf programs
 foreach(EBPF_PROG IN LISTS EBPF_PROGS)
-    
+
     # test to only build ebpf programs when they have changed
     if(${CMAKE_SOURCE_DIR}/ebpfKern/${EBPF_PROG}.c IS_NEWER_THAN ${CMAKE_BINARY_DIR}/${EBPF_PROG}.o)
         build_ebpf(${EBPF_PROG})

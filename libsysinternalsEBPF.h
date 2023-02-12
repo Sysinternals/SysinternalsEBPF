@@ -175,8 +175,14 @@ typedef struct {
     const char                      **defaultPaths;
     const unsigned int              numMapObjects;
     const ebpfTelemetryMapObject    *mapObjects;
+    const char                      *btfFile;
+    const bool                      debug;
 } ebpfTelemetryConfig;
 
+typedef struct {
+    char name[PATH_MAX];
+    size_t size;
+} ebpfProgramSizes;
 
 //
 // EventCallback and EventLostCallback handle the events produced by the perf
@@ -211,6 +217,8 @@ int telemetryStart(
     const char *argv[],
     int *fds
     );
+
+unsigned int getEbpfProgramSizes(char* objectPath, ebpfProgramSizes** progs);
 const char *eBPFstrerror(int error);
 void telemetryCloseAll(void);
 void telemetrySignalInterrupt(int code);
@@ -223,6 +231,8 @@ bool fileExists(const char *filepath);
 bool dirExists(const char *dirpath);
 bool createDir(const char *dir, mode_t perms);
 bool dropFile(const char *filepath, const char *start, const char *end, bool force, mode_t perms);
+char* getLibInstallPath();
+bool fileDelete(const char *filepath);
 
 
 #endif

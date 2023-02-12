@@ -28,16 +28,35 @@
 //
 //====================================================================
 
+#include "/usr/include/fcntl.h"
 #include <stdio.h>
 #include <unistd.h>
-#include <fcntl.h>
+#include <sys/stat.h>
 #include <sys/mman.h>
 #include <stdbool.h>
-#include <sys/stat.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
+
+
+//--------------------------------------------------------------------
+//
+// fileDelete
+//
+// Deletes specified file
+//
+//--------------------------------------------------------------------
+bool fileDelete(const char *filepath)
+{
+    if (filepath == NULL) {
+        fprintf(stderr, "fileDelete invalid params\n");
+        return false;
+    }
+
+    return unlink(filepath) < 0 ? false : true;
+}
+
 
 //--------------------------------------------------------------------
 //
