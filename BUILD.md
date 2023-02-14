@@ -12,7 +12,7 @@ sudo apt -y install build-essential gcc g++ make cmake libelf-dev llvm clang lib
 
 ### Rocky Linux
 ```
-yum install gcc gcc-c++ make cmake llvm clang elfutils-libelf-devel rpm-build json-glib-devel python3 glibc-devel.i686
+sudo yum install gcc gcc-c++ make cmake llvm clang elfutils-libelf-devel rpm-build json-glib-devel python3 glibc-devel.i686
 ```
 
 ### Debian
