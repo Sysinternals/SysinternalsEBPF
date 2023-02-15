@@ -70,6 +70,21 @@ set(LD "/usr/bin/ld")
 set(PACKAGE_NAME "sysinternalsebpf")
 
 #
+# Compress man page
+#
+set(SYSEBPF_COMPRESS_MAN "sysinternalsebpf.3.gz")
+
+add_custom_target(SYSEBPF_MAN_COMPRESS ALL
+                  DEPENDS ${PROJECT_BINARY_DIR}/${SYSEBPF_COMPRESS_MAN}
+                  )
+
+add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/${SYSEBPF_COMPRESS_MAN}
+                   COMMAND gzip -f -c "${CMAKE_SOURCE_DIR}/package/usr/share/man/man3/sysinternalsebpf.3" > ${PROJECT_BINARY_DIR}/${SYSEBPF_COMPRESS_MAN}
+                   COMMENT "Compressing SysinternalsEBPF man page"
+                   DEPENDS "${CMAKE_SOURCE_DIR}/package/usr/share/man/man3/sysinternalsebpf.3"
+                  )
+
+#
 # report warnings as errors
 # -g is required for BTF and CO:RE
 #

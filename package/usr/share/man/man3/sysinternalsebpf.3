@@ -1,0 +1,225 @@
+.\" Manpage for Sysinternals EBPF Library
+.\" Contact via http://github/Sysinternals to correct errors or typos.
+.TH SYSINTERNALSEBPF 3 "23 Feb 2023" "1.1.0" "Library Functions Manual"
+
+.SH NAME
+SysinternalsEBPF \- Sysinternals shared library and eBPF code library
+
+.SH USERLAND INCLUDES
+
+#include <libsysinternalsEBPF.h>
+
+.SH EBPF INCLUDES
+\-L /opt/sysinternalsEBPF/ebpfKern
+
+#include <sysinternalsEBPF_common.h>
+
+#include <sysinternalsEBPFshared.h>
+
+#include <sysinternalsEBPF_helpers.c>
+
+.SH DESCRIPTION
+SysinternalsEBPF comprises two parts: a shared library that userland programs
+can link with; and an eBPF code library that eBPF programs can include to
+interact successfully with the library.
+
+.SH USERLAND API
+The eBPF telemetry can be initialised and started with telemetryStart() and
+stopped with telemetryCloseAll(). The telemetrySignalInterrupt() function
+should be called whenever a signal (other than SIGHUP) is received (inside the
+signal handler is the best place) to indicate that the interrupting signal was
+expected.
+
+Returned error codes can be interpreted with eBPFstrerror().
+
+The library will call telemetryReady() when everything has been initialised.  It
+will call eventCb() on every received event, and eventsLostCb() if the perf ring
+buffer becomes satuarated and events are lost.
+
+It will register a signal handler for SIGHUP and take that as indication that
+the configuration should be reloaded, which will cause it to call
+telemetryReloadConfig() after dispatching any existing events. This can then
+call telemetryUpdateSyscalls() to change which syscalls are marked as active.
+
+The telemetryMap*() functions are wrappers for the libbpf functions of the same
+names, removing the need for the userland program to link directly with libbpf.
+
+The dropFile() function will write the memory between start and end to the given
+filepath with the specified permissions. The force parameter will cause an
+existing file to be overwritten.
+
+int telemetryStart(
+    const ebpfTelemetryConfig *ebpfConfig,
+    EventCallback *eventCb,
+    EventLostCallback *eventsLostCb,
+    TelemetryReadyCallback *telemetryReady,
+    TelemetryReloadConfig *telemetryReloadConfig,
+    void *context,
+    const char *argv[],
+    int *fds
+    );
+
+const char *eBPFstrerror(
+    int error
+    );
+
+void telemetryCloseAll(void);
+
+void telemetrySignalInterrupt(
+    int code
+    );
+
+void telemetryUpdateSyscalls(
+    bool *activeSyscalls
+    );
+
+long telemetryMapLookupElem(
+    int fd,
+    const void *key,
+    void *value
+    );
+
+long telemetryMapUpdateElem(
+    int fd,
+    const void *key,
+    const void *value,
+    ebpfUpdateMapMode mode
+    );
+
+long telemetryMapDeleteElem(
+    int fd,
+    const void *key
+    );
+
+bool fileExists(
+    const char *filepath
+    );
+
+bool dirExists(
+    const char *dirpath
+    );
+
+bool createDir(const char *dir, mode_t perms);
+
+bool dropFile(
+    const char *filepath,
+    const char *start,
+    const char *end,
+    bool force,
+    mode_t perms
+    );
+
+.SH EBPF API
+The eBPF code library snippets are included as inline functions, providing
+access to the kernel struct offsets and various struct dereferencing functions.
+
+Define NOLOOPS for objects destined for kernels that don't support loops within
+eBPF programs, such as those pre v5.3.
+
+Define SUB4096 for objects destined for kernels that only support up to 4,096
+instructions in a single eBPF program, such as those pre v5.2.
+
+Define EBPF_CO_RE for the helper functions to use the libbpf CORE functions.
+
+static inline void eventOutput(
+    void *ctx,
+    void *map,
+    uint64_t flags,
+    void *data,
+    uint64_t size
+    );
+
+static inline const void *derefMember(
+    const void *base,
+    const unsigned int *refs
+    );
+
+static inline uint64_t derefPtr(
+    const void *base,
+    const unsigned int *refs
+    );
+
+static inline bool derefStringInto(
+    char *dest,
+    unsigned int size,
+    const void *base,
+    const unsigned int *refs
+    );
+
+static inline const void *derefInodeFromFd(
+    const void *task,
+    unsigned int fd,
+    const ebpfConfig *config
+    );
+
+static inline uint32_t derefFilepathInto(
+    char *dest,
+    const void *base,
+    const unsigned int *refs,
+    const ebpfConfig *config
+    );
+
+static inline uint32_t copyCommandline(
+    char *e,
+    const void *task,
+    const ebpfConfig *config
+    );
+
+static inline uint32_t fdToPath(
+    char *fdPath,
+    int fd,
+    const void *task,
+    const ebpfConfig *config
+    );
+
+static inline uint32_t resolveFdPath(
+    char *pathname,
+    int fd,
+    const void *task,
+    const ebpfConfig *config
+    );
+
+static inline uint32_t resolveDfdPath(
+    char *dfdPath,
+    int dfd,
+    const char *pathname,
+    const void *task,
+    const ebpfConfig *config
+    );
+
+static inline void initArgs(
+    argsStruct *eventArgs,
+    unsigned long syscallId
+    );
+
+static inline bool sysEnterCheckAndInit(
+    argsStruct *eventArgs,
+    const ebpfConfig *config,
+    uint32_t syscall,
+    uint64_t pidTid
+    );
+
+static inline void sysEnterCompleteAndStore(
+    const argsStruct *eventArgs,
+    uint32_t syscall,
+    uint64_t pidTid
+    );
+
+.SH SEE ALSO
+sysmon(8)
+
+.SH BUGS
+No known bugs.
+
+.SH AUTHOR
+Sysinternals - www.sysinternals.com
+
+Mark Russinovich, Thomas Garnier and Kevin Sheldrake
+
+Copyright (C) 2014-2023 Microsoft Corporation
+
+.SH COPYRIGHT
+The userland part of SysinternalsEBPF is licensed under LGPL2.1;
+the eBPF parts are licensed under GPL2.
+
+

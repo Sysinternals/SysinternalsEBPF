@@ -62,7 +62,8 @@ fi
 mkdir -p "${PROJECT_BINARY_DIR}/deb/${DEB_PACKAGE_NAME}"
 cp -a "${CMAKE_SOURCE_DIR}/package/DEBIAN" "${PROJECT_BINARY_DIR}/deb/${DEB_PACKAGE_NAME}/"
 cp "${PROJECT_BINARY_DIR}/DEBIANcontrol" "${PROJECT_BINARY_DIR}/deb/${DEB_PACKAGE_NAME}/DEBIAN/control"
-cp -a "${CMAKE_SOURCE_DIR}/package/usr" "${PROJECT_BINARY_DIR}/deb/${DEB_PACKAGE_NAME}/"
+mkdir -p "${PROJECT_BINARY_DIR}/deb/${DEB_PACKAGE_NAME}/usr/share/man/man3"
+cp -a "${PROJECT_BINARY_DIR}/sysinternalsebpf.3.gz" "${PROJECT_BINARY_DIR}/deb/${DEB_PACKAGE_NAME}/usr/share/man/man3"
 mkdir -p "${PROJECT_BINARY_DIR}/deb/${DEB_PACKAGE_NAME}/usr/bin"
 cp "${PROJECT_BINARY_DIR}/libsysinternalsEBPFinstaller" "${PROJECT_BINARY_DIR}/deb/${DEB_PACKAGE_NAME}/usr/bin/"
 
@@ -78,7 +79,7 @@ fi
 mkdir -p "${PROJECT_BINARY_DIR}/rpm/${RPM_PACKAGE_NAME}/SPECS"
 cp -a "${PROJECT_BINARY_DIR}/SPECS.spec" "${PROJECT_BINARY_DIR}/rpm/${RPM_PACKAGE_NAME}/SPECS/${RPM_PACKAGE_NAME}.spec"
 mkdir "${PROJECT_BINARY_DIR}/rpm/${RPM_PACKAGE_NAME}/BUILD/"
-cp "${CMAKE_SOURCE_DIR}/package/usr/share/man/man3/sysinternalsebpf.3.gz" "${PROJECT_BINARY_DIR}/libsysinternalsEBPFinstaller" "${PROJECT_BINARY_DIR}/libsysinternalsEBPF.so" "${PROJECT_BINARY_DIR}/rpm/${RPM_PACKAGE_NAME}/BUILD/"
+cp "${PROJECT_BINARY_DIR}/sysinternalsebpf.3.gz" "${PROJECT_BINARY_DIR}/libsysinternalsEBPFinstaller" "${PROJECT_BINARY_DIR}/libsysinternalsEBPF.so" "${PROJECT_BINARY_DIR}/rpm/${RPM_PACKAGE_NAME}/BUILD/"
 
 if [ "$RPMBUILD" != "" ]; then
     cd "${PROJECT_BINARY_DIR}/rpm/${RPM_PACKAGE_NAME}"
