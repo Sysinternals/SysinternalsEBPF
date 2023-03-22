@@ -210,7 +210,7 @@ static inline const void *derefInodeFromFd(const void *task, unsigned int fd, co
         return NULL;
 #ifdef EBPF_CO_RE
     inode = BPF_CORE_READ((struct file *)file, f_path.dentry, d_inode);
-    if (!dentry)
+    if (!inode)
         return 0;
 #else
     path = (const void *)derefMember(file, config->offsets.fd_path);
@@ -275,7 +275,6 @@ static inline uint32_t derefFilepathInto(char *dest, const void *dentry, const v
         }
         // store this dentry name in start of second half of our temporary storage
         dlen = bpf_probe_read_str(&temp[PATH_MAX], PATH_MAX, dname);
-        BPF_PRINTK("dname: (%s)\n", dname);
         // get parent dentry
 #ifdef EBPF_CO_RE
         newdentry = (char*) BPF_CORE_READ((struct dentry *)dentry, d_parent);
