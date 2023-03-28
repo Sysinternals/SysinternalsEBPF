@@ -1,4 +1,5 @@
 # Build
+Please see the history of this file for instructions for older, unsupported versions.
 
 ## Prerequisites
 - clang/llvm v10+
