@@ -505,7 +505,7 @@ static inline uint32_t resolveFdPath(char *pathname, int fd, const void *task, c
 {
     pathname[0] = 0x00;
 
-    if (fd > 0)
+    if (fd >= 0)
         return fdToPath(pathname, fd, task, config);
 
     return 0;
