@@ -23,7 +23,8 @@ Use 'find' on the package directory to locate it manually.
 
 ## License
 SysinternalsEBPF is licensed under LGPL2.1.
-SysinternalsEBPF includes libbpf, which is licensed under LGPL2.1.
+SysinternalsEBPF includes libbpf, which is dual-licensed under BSD 2-clause
+license and LGPL2.1.
 Libbpf can be located at https://github.com/libbpf/libbpf
 The SysinternalsEBPF library of eBPF code is licensed under GPL2.
 
