@@ -1,12 +1,4 @@
 # Azure build pipelines for Sysinternalsebpf
-
-resources:
-  repositories:
-  - repository: SysinternalsEBPF
-    type: github
-    endpoint: sysinternals
-    name: sysinternals/sysinternalsebpf
-
 trigger:
     branches:
       include:
@@ -28,7 +20,7 @@ stages:
         demands:
         - ImageOverride -equals sysmon-ubuntu-build-agent
       steps:
-      - checkout: SysinternalsEBPF
+      - checkout: self
         persistCredentials: true
 
       - template: templates/build.yaml
