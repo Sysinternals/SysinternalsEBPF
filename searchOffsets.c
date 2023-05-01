@@ -251,35 +251,38 @@ bool searchOffsets(Offsets *offsets)
         i++;
     }
 
-    suitableOffsets = (unameOffsets *)malloc(sizeof(unameOffsets) * unameCount);
-    if (suitableOffsets == NULL) {
-        g_object_unref(parser);
-        return false;
-    }
-
-    i = 0;
-    unameCount = 0;
-    while (unames[i] != NULL) {
-        json_reader_read_member(reader, unames[i]);
-        unameStr = extractVersion(unames[i]);
-        if (unameStr != NULL) {
-            suitableOffsets[unameCount].uname = unameStr;
-            if (copyOffsets(&suitableOffsets[unameCount].offsets, reader)) {
-                unameCount++;
-            }
+    if (unameCount > 0)
+    {
+        suitableOffsets = (unameOffsets *)malloc(sizeof(unameOffsets) * unameCount);
+        if (suitableOffsets == NULL) {
+            g_object_unref(parser);
+            return false;
         }
-        json_reader_end_member(reader);
-        i++;
-    }
 
-    qsort(suitableOffsets, unameCount, sizeof(unameOffsets), unameCmp);
+        i = 0;
+        unameCount = 0;
+        while (unames[i] != NULL) {
+            json_reader_read_member(reader, unames[i]);
+            unameStr = extractVersion(unames[i]);
+            if (unameStr != NULL) {
+                suitableOffsets[unameCount].uname = unameStr;
+                if (copyOffsets(&suitableOffsets[unameCount].offsets, reader)) {
+                    unameCount++;
+                }
+            }
+            json_reader_end_member(reader);
+            i++;
+        }
 
-    if (getKernelProcVersion(keyName, sizeof(keyName))) {
-        key.uname = keyName;
-        myoffsets = bsearch(&key, suitableOffsets, unameCount, sizeof(unameOffsets), unameCmp);
-        if (myoffsets != NULL) {
-            memcpy(offsets, &myoffsets->offsets, sizeof(myoffsets->offsets));
-            ret = true;
+        qsort(suitableOffsets, unameCount, sizeof(unameOffsets), unameCmp);
+
+        if (getKernelProcVersion(keyName, sizeof(keyName))) {
+            key.uname = keyName;
+            myoffsets = bsearch(&key, suitableOffsets, unameCount, sizeof(unameOffsets), unameCmp);
+            if (myoffsets != NULL) {
+                memcpy(offsets, &myoffsets->offsets, sizeof(myoffsets->offsets));
+                ret = true;
+            }
         }
     }
 

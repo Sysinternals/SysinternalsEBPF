@@ -715,10 +715,12 @@ bool locateTPprogs(const ebpfTelemetryObject *obj)
                 programName[programNameLen - 1] = '0' + n;
                 if ((s->prog[n] = bpf_object__find_program_by_name(bpfObj, programName)) == NULL) {
                     fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", programName, strerror(errno));
+                    free(programName);
                     return false;
                 }
                 bpf_program__set_type(s->prog[n], BPF_PROG_TYPE_TRACEPOINT);
             }
+            free(programName);
         } else {
             // attach this to specified enter tracepoint
             if ((s->prog[0] = bpf_object__find_program_by_name(bpfObj, p->program)) == NULL) {

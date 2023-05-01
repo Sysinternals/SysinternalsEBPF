@@ -338,140 +338,200 @@ int main(int argc, char *argv[])
             _binary_libsysinternalsEBPF_so_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(HEADER_DEST "/" SYSINTERNALSEBPF_HEADER,
             _binary_libsysinternalsEBPF_h_start,
             _binary_libsysinternalsEBPF_h_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(SYSINTERNALSEBPF_DIR "/" MEM_DUMP_OBJ,
             _binary_sysinternalsEBPFmemDump_o_start,
             _binary_sysinternalsEBPFmemDump_o_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(SYSINTERNALSEBPF_DIR "/" RAW_SOCK_OBJ,
             _binary_sysinternalsEBPFrawSock_o_start,
             _binary_sysinternalsEBPFrawSock_o_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(SYSINTERNALSEBPF_DIR "/" OFFSETS_DB_FILE,
             _binary_offsets_offsets_json_start,
             _binary_offsets_offsets_json_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(GETOFFSETS_DIR "/LICENSE",
             _binary_getOffsets_LICENSE_start,
             _binary_getOffsets_LICENSE_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(GETOFFSETS_DIR "/Makefile",
             _binary_getOffsets_Makefile_start,
             _binary_getOffsets_Makefile_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(GETOFFSETS_DIR "/README.md",
             _binary_getOffsets_README_md_start,
             _binary_getOffsets_README_md_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(GETOFFSETS_DIR "/extractOffsets.c",
             _binary_getOffsets_extractOffsets_c_start,
             _binary_getOffsets_extractOffsets_c_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(GETOFFSETS_DIR "/getOffsets.c",
             _binary_getOffsets_getOffsets_c_start,
             _binary_getOffsets_getOffsets_c_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(GETOFFSETS_DIR "/mount.h",
             _binary_getOffsets_mount_h_start,
             _binary_getOffsets_mount_h_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(EBPFKERN_DIR "/LICENSE",
             _binary_ebpfKern_LICENSE_start,
             _binary_ebpfKern_LICENSE_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(EBPFKERN_DIR "/sysinternalsEBPF_common.h",
             _binary_ebpfKern_sysinternalsEBPF_common_h_start,
             _binary_ebpfKern_sysinternalsEBPF_common_h_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(EBPFKERN_DIR "/sysinternalsEBPF_helpers.c",
             _binary_ebpfKern_sysinternalsEBPF_helpers_c_start,
             _binary_ebpfKern_sysinternalsEBPF_helpers_c_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(EBPFKERN_DIR "/sysinternalsEBPFshared.h",
             _binary_sysinternalsEBPFshared_h_start,
             _binary_sysinternalsEBPFshared_h_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(EBPFKERN_DIR "/sysinternalsEBPFoffsets.h",
             _binary_sysinternalsEBPFoffsets_h_start,
             _binary_sysinternalsEBPFoffsets_h_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(LIBBPF_DIR "/LICENSE.LPGL-2.1",
             _binary_LICENSE_LGPL_2_1_start,
             _binary_LICENSE_LGPL_2_1_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(LIBBPF_DIR "/bpf_helpers.h",
             _binary_src_bpf_helpers_h_start,
             _binary_src_bpf_helpers_h_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(LIBBPF_DIR "/bpf_helper_defs.h",
             _binary_src_bpf_helper_defs_h_start,
             _binary_src_bpf_helper_defs_h_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         if (!dropFile(LIBBPF_DIR "/bpf_core_read.h",
             _binary_src_bpf_core_read_h_start,
             _binary_src_bpf_core_read_h_end,
             force,
             fileMode))
-            return 1;
+            {
+                free(libPath);
+                return 1;
+            }
 
         printf("Success!\n");
         printf("Library installed to\t%s\n", libPath);
