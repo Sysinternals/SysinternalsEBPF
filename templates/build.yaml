@@ -10,3 +10,10 @@ steps:
     cmake ..
     make
   displayName: "Build SysinternalsEBPF binaries"
+
+- script: |
+    cd ${{ parameters.srcFolder }}
+    rm -rf build && mkdir build && cd build
+    cmake ..
+    scan-build -v --status-bugs -o verifier_result --exclude libbpf make
+  displayName: "Static analysis of SysinternalsEBPF source code"
