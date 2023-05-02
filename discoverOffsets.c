@@ -813,8 +813,18 @@ bool getCredsOffsets(Offsets *offsets, struct perf_buffer *pb)
 
     if (child == 0) {
         // set child process creds to known values and trigger EBPF program
-        setgid(TEMPGID);
-        setuid(TEMPUID);
+        if(setgid(TEMPGID) < 0)
+        {
+            fprintf(stderr, "Failed in call to setgid\n");
+            exit(1);
+        }
+
+        if(setuid(TEMPUID) < 0)
+        {
+            fprintf(stderr, "Failed in call to setuid\n");
+            exit(1);
+        }
+
         // create semaphore
         sem = sem_open(SEM_NAME, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 0);
         if (sem == SEM_FAILED) {
