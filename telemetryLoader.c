@@ -932,7 +932,7 @@ bool linkTPprogs(const ebpfTelemetryObject *obj,
         memset(s->link, 0, sizeof(struct bpf_link *) * s->numLinks);
         if (p->syscall == EBPF_GENERIC_SYSCALL) {
             // attach this to all active syscall enter tracepoints
-            for (syscall=0; syscall<=SYSCALL_MAX; syscall++) {
+            for (syscall=0; syscall<SYSCALL_MAX; syscall++) {
                 if (activeSyscalls[syscall]) {
                     snprintf(tp, SYSCALL_NAME_LEN * 2, "sys_enter_%s", syscallNumToName[syscall].name);
                     unsigned int numArgs = syscallNumToName[syscall].numArgs;
@@ -955,7 +955,7 @@ bool linkTPprogs(const ebpfTelemetryObject *obj,
         memset(s->link, 0, sizeof(struct bpf_link *) * s->numLinks);
         if (p->syscall == EBPF_GENERIC_SYSCALL) {
             // attach this to all active syscall exit tracepoints
-            for (syscall=0; syscall<=SYSCALL_MAX; syscall++) {
+            for (syscall=0; syscall<SYSCALL_MAX; syscall++) {
                 if (activeSyscalls[syscall]) {
                     snprintf(tp, SYSCALL_NAME_LEN * 2, "sys_exit_%s", syscallNumToName[syscall].name);
                     s->link[syscall] = bpf_program__attach_tracepoint(s->prog[0], "syscalls", tp);
