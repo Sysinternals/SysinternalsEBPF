@@ -932,9 +932,12 @@ bool linkTPprogs(const ebpfTelemetryObject *obj,
         memset(s->link, 0, sizeof(struct bpf_link *) * s->numLinks);
         if (p->syscall == EBPF_GENERIC_SYSCALL) {
             // attach this to all active syscall enter tracepoints
-            for (syscall=0; syscall<SYSCALL_MAX; syscall++) {
+            for (syscall=0; syscall<=SYSCALL_MAX; syscall++) {
                 if (activeSyscalls[syscall]) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
                     snprintf(tp, SYSCALL_NAME_LEN * 2, "sys_enter_%s", syscallNumToName[syscall].name);
+#pragma GCC diagnostic pop
                     unsigned int numArgs = syscallNumToName[syscall].numArgs;
                     s->link[syscall] = bpf_program__attach_tracepoint(s->prog[numArgs], "syscalls", tp);
                     if (libbpf_get_error(s->link[syscall]))
@@ -955,7 +958,7 @@ bool linkTPprogs(const ebpfTelemetryObject *obj,
         memset(s->link, 0, sizeof(struct bpf_link *) * s->numLinks);
         if (p->syscall == EBPF_GENERIC_SYSCALL) {
             // attach this to all active syscall exit tracepoints
-            for (syscall=0; syscall<SYSCALL_MAX; syscall++) {
+            for (syscall=0; syscall<=SYSCALL_MAX; syscall++) {
                 if (activeSyscalls[syscall]) {
                     snprintf(tp, SYSCALL_NAME_LEN * 2, "sys_exit_%s", syscallNumToName[syscall].name);
                     s->link[syscall] = bpf_program__attach_tracepoint(s->prog[0], "syscalls", tp);
