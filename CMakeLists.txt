@@ -88,7 +88,7 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/${SYSEBPF_COMPRESS_MAN}
 # report warnings as errors
 # -g is required for BTF and CO:RE
 #
-add_compile_options(-Wall -Werror -g -D_FORTIFY_SOURCE=2 -fstack-protector-all)
+add_compile_options(-Wall -Werror -g -D_FORTIFY_SOURCE=2 -fstack-protector-all -O2)
 
 include(ExternalProject)
 
