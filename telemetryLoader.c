@@ -960,7 +960,10 @@ bool linkTPprogs(const ebpfTelemetryObject *obj,
             // attach this to all active syscall exit tracepoints
             for (syscall=0; syscall<=SYSCALL_MAX; syscall++) {
                 if (activeSyscalls[syscall]) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
                     snprintf(tp, SYSCALL_NAME_LEN * 2, "sys_exit_%s", syscallNumToName[syscall].name);
+#pragma GCC diagnostic pop
                     s->link[syscall] = bpf_program__attach_tracepoint(s->prog[0], "syscalls", tp);
                     if (libbpf_get_error(s->link[syscall]))
                         return false;
