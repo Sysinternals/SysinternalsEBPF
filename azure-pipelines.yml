@@ -25,6 +25,6 @@ stages:
 
       - template: templates/build.yaml
         parameters:
-          srcFolder: '.'
+          srcPath: '.'
           runStaticAnalysis: true
       displayName: "Build Sysinternalsebpf"

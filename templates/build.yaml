@@ -1,22 +1,23 @@
 parameters:
-- name: srcFolder
+- name: srcPath
   type: string
-  default: ''
+  default: '.'
 - name: runStaticAnalysis
   type: boolean
+  default: False
 
 steps:
 - script: |
-    cd ${{ parameters.srcFolder }}
-    mkdir build && cd build
+    cd ${{ parameters.srcPath }}
+    mkdir sysinternalsEBPF_build && cd sysinternalsEBPF_build
     cmake ..
     make
   displayName: "Build SysinternalsEBPF binaries"
 
 - script: |
     if [ ${{ parameters.runStaticAnalysis }} == True ]; then
-      cd ${{ parameters.srcFolder }}
-      rm -rf build && mkdir build && cd build
+      cd ${{ parameters.srcPath }}
+      rm -rf sysinternalsEBPF_build && mkdir sysinternalsEBPF_build && cd sysinternalsEBPF_build
       scan-build cmake ..
       scan-build -v --status-bugs -o verifier_result --exclude libbpf make
     else
