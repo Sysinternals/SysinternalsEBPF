@@ -175,8 +175,13 @@ add_executable(libsysinternalsEBPFinstaller
     libbpf-src-bpf_core_read.h.o
 )
 
-add_custom_target(packages
-    COMMAND "${CMAKE_SOURCE_DIR}/makePackages.sh"  "${CMAKE_SOURCE_DIR}" "${PROJECT_BINARY_DIR}" "${PACKAGE_NAME}" "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}" "${PROJECT_VERSION_TWEAK}"
+add_custom_target(deb
+    COMMAND "${CMAKE_SOURCE_DIR}/makePackages.sh"  "${CMAKE_SOURCE_DIR}" "${PROJECT_BINARY_DIR}" "${PACKAGE_NAME}" "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}" "${PROJECT_VERSION_TWEAK}" "deb"
+    DEPENDS "${CMAKE_SOURCE_DIR}/package" "${PROJECT_BINARY_DIR}/libsysinternalsEBPFinstaller"
+)
+
+add_custom_target(rpm
+    COMMAND "${CMAKE_SOURCE_DIR}/makePackages.sh"  "${CMAKE_SOURCE_DIR}" "${PROJECT_BINARY_DIR}" "${PACKAGE_NAME}" "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}" "${PROJECT_VERSION_TWEAK}" "rpm"
     DEPENDS "${CMAKE_SOURCE_DIR}/package" "${PROJECT_BINARY_DIR}/libsysinternalsEBPFinstaller"
 )
 
