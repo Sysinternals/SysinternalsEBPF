@@ -16,12 +16,15 @@ stages:
    jobs:
     - job: "Build_Sysinternalsebpf_Ubuntu_20_04_Package"
       pool:
-        name: "Sysinternals-for-Linux-AME"
-        demands:
-        - ImageOverride -equals sysmon-ubuntu-build-agent
+        vmImage: "ubuntu-20.04"
       steps:
       - checkout: self
         persistCredentials: true
+
+      - script: |
+          chmod +x .container/install-ubuntu-dependencies.sh
+          .container/install-ubuntu-dependencies.sh
+        displayName: "Install pre-reqs for Ubuntu"
 
       - template: templates/build.yaml
         parameters:
