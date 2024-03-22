@@ -47,7 +47,7 @@ sudo apt-get install -y --no-install-recommends \
         clang-tools \
         libssl-dev
 
-wget https://raw.githubusercontent.com/torvalds/linux/master/include/uapi/linux/openat2.h -O /usr/include/linux/openat2.h
+sudo wget https://raw.githubusercontent.com/torvalds/linux/master/include/uapi/linux/openat2.h -O /usr/include/linux/openat2.h
 
 # install debbuild
 wget https://github.com/debbuild/debbuild/releases/download/22.02.1/debbuild_22.02.1-0ubuntu20.04_all.deb \
