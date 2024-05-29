@@ -11,8 +11,7 @@ parameters:
 
 steps:
 - script: |
-    cd ${{ parameters.srcPath }}
-    mkdir -p ${{ parameters.builddir }} && cd ${{ parameters.builddir }}
+    mkdir -p ${{ parameters.srcPath }}/${{ parameters.builddir }} && cd ${{ parameters.srcPath }}/${{ parameters.builddir }}
     cmake ..
     make
   displayName: "Build SysinternalsEBPF binaries"
@@ -20,7 +19,7 @@ steps:
 - script: |
     if [ ${{ parameters.runStaticAnalysis }} == True ]; then
       cd ${{ parameters.srcPath }}
-      rm -rf ${{ parameters.builddir }} && mkdir ${{ parameters.builddir }} && cd ${{ parameters.builddir }}
+      rm -rf ${{ parameters.srcPath }}/${{ parameters.builddir }} && mkdir ${{ parameters.srcPath }}/${{ parameters.builddir }} && cd ${{ parameters.srcPath }}/${{ parameters.builddir }}
       scan-build cmake ..
       scan-build -v --status-bugs -o verifier_result --exclude libbpf make
     else
