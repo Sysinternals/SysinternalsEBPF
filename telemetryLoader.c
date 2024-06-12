@@ -63,6 +63,8 @@ bool linkOtherTPprogs(const ebpfTelemetryObject *obj, const bool *activeSyscalls
 
 extern const syscallNames       syscallNumToName[SYSCALL_MAX+1];
 
+static log_callback             logCallback = NULL;
+
 static struct bpf_object        *bpfObj = NULL;
 struct perf_buffer_opts         pbOpts = {};
 struct perf_buffer              *pb = NULL;
@@ -106,6 +108,7 @@ double                          g_bootSecSinceEpoch = 0;
 
 bool                            running = true;
 bool                            signalInterrupt = false;
+bool                            telemetryCancelled = false;
 
 eBPFerrorString                 eBPFerrorStrings[] =
 {
@@ -150,6 +153,36 @@ eBPFerrorString                 eBPFerrorStrings[] =
 {   E_DISC_EXE_PATH_OFFSET,     "Discovery - could not find the exe offsets"},
 {   E_DISC_SKBUFF_OFFSET,       "Discovery - could not find the skbuff offsets"},
 };
+
+//--------------------------------------------------------------------
+//
+// logMessage
+//
+// Helper function that calls the log callback function (if set)
+//
+//--------------------------------------------------------------------
+void logMessage(const char* format, ...)
+{
+    if(logCallback != NULL)
+    {
+        va_list args;
+        va_start(args, format);
+        logCallback(format, args);
+        va_end(args);
+    }
+}
+
+//--------------------------------------------------------------------
+//
+// setLogCallback
+//
+// Sets the logging callback that will be invoked for all log messages.
+//
+//--------------------------------------------------------------------
+void setLogCallback(log_callback callback)
+{
+    logCallback = callback;
+}
 
 
 //--------------------------------------------------------------------
@@ -296,6 +329,19 @@ void telemetrySignalInterrupt(int code)
 {
     signalInterrupt = true;
 }
+
+//--------------------------------------------------------------------
+//
+// telemetryCancel
+//
+// Inform the control loop that the telemetry has been cancelled.
+//
+//--------------------------------------------------------------------
+void telemetryCancel()
+{
+    telemetryCancelled = true;
+}
+
 
 //--------------------------------------------------------------------
 //
@@ -1471,7 +1517,6 @@ int telemetryStart(
     if (ebpfConfig == NULL || eventCb == NULL || eventsLostCb == NULL ||
             telemetryReady == NULL || telemetryReloadConfig == NULL ||
             argv == NULL || fds == NULL) {
-        fprintf(stderr, "telemetryStart invalid params\n");
         return E_EBPF_INVALIDPARAMS;
     }
 
@@ -1497,7 +1542,7 @@ int telemetryStart(
 
     rawTracepoints = object->rawSyscallTracepoints;
 
-    fprintf(stderr, "Using EBPF object: %s\n", filepath);
+    logMessage("Using EBPF object: %s\n", filepath);
 
     setrlimit(RLIMIT_MEMLOCK, &lim);
 
@@ -1558,6 +1603,11 @@ int telemetryStart(
         if (isTesting) {
             if (i++ > STOPLOOP) break;
         }
+        if(telemetryCancelled)
+        {
+            break;
+        }
+
         checkPerfErrors();
     }
 

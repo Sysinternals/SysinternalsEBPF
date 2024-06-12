@@ -196,6 +196,8 @@ typedef void (EventLostCallback)(void *ctx, int cpu, uint64_t lostCnt);
 typedef void (TelemetryReadyCallback)(void);
 typedef void (TelemetryReloadConfig)(void);
 
+typedef void (*log_callback)(const char *format, va_list args);
+
 //
 // telemetryCloseAll can be called to shut everything down.
 // telemetrySignalInterrupt should be called when a signal is received, other
@@ -217,6 +219,10 @@ int telemetryStart(
     const char *argv[],
     int *fds
     );
+
+void telemetryCancel();
+
+void setLogCallback(log_callback callback);
 
 unsigned int getEbpfProgramSizes(char* objectPath, ebpfProgramSizes** progs);
 const char *eBPFstrerror(int error);
