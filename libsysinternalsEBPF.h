@@ -223,6 +223,7 @@ int telemetryStart(
 void telemetryCancel();
 
 void setLogCallback(log_callback callback);
+void logMessage(const char* format, ...);
 
 unsigned int getEbpfProgramSizes(char* objectPath, ebpfProgramSizes** progs);
 const char *eBPFstrerror(int error);
