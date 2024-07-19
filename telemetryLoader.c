@@ -63,6 +63,8 @@ bool linkOtherTPprogs(const ebpfTelemetryObject *obj, const bool *activeSyscalls
 
 extern const syscallNames       syscallNumToName[SYSCALL_MAX+1];
 
+static log_callback             logCallback = NULL;
+
 static struct bpf_object        *bpfObj = NULL;
 struct perf_buffer_opts         pbOpts = {};
 struct perf_buffer              *pb = NULL;
@@ -106,6 +108,7 @@ double                          g_bootSecSinceEpoch = 0;
 
 bool                            running = true;
 bool                            signalInterrupt = false;
+bool                            telemetryCancelled = false;
 
 eBPFerrorString                 eBPFerrorStrings[] =
 {
@@ -150,6 +153,36 @@ eBPFerrorString                 eBPFerrorStrings[] =
 {   E_DISC_EXE_PATH_OFFSET,     "Discovery - could not find the exe offsets"},
 {   E_DISC_SKBUFF_OFFSET,       "Discovery - could not find the skbuff offsets"},
 };
+
+//--------------------------------------------------------------------
+//
+// logMessage
+//
+// Helper function that calls the log callback function (if set)
+//
+//--------------------------------------------------------------------
+void logMessage(const char* format, ...)
+{
+    if(logCallback != NULL)
+    {
+        va_list args;
+        va_start(args, format);
+        logCallback(format, args);
+        va_end(args);
+    }
+}
+
+//--------------------------------------------------------------------
+//
+// setLogCallback
+//
+// Sets the logging callback that will be invoked for all log messages.
+//
+//--------------------------------------------------------------------
+void setLogCallback(log_callback callback)
+{
+    logCallback = callback;
+}
 
 
 //--------------------------------------------------------------------
@@ -299,6 +332,19 @@ void telemetrySignalInterrupt(int code)
 
 //--------------------------------------------------------------------
 //
+// telemetryCancel
+//
+// Inform the control loop that the telemetry has been cancelled.
+//
+//--------------------------------------------------------------------
+void telemetryCancel()
+{
+    telemetryCancelled = true;
+}
+
+
+//--------------------------------------------------------------------
+//
 // telemetryUpdateSyscalls
 //
 // Stop running eBPF programs and relink with new activeSyscalls array
@@ -308,7 +354,7 @@ void telemetrySignalInterrupt(int code)
 void telemetryUpdateSyscalls(bool *activeSyscalls)
 {
     if (activeSyscalls == NULL) {
-        fprintf(stderr, "ebpfTelemetryUpdateSyscalls invalid params\n");
+        logMessage("ebpfTelemetryUpdateSyscalls invalid params\n");
         return;
     }
 
@@ -391,7 +437,7 @@ bool connectRawSock(const ebpfTelemetryConfig *ebpfConfig)
 
     // check path
     if (stat(filepath, &filepathStat) != 0 || !S_ISREG(filepathStat.st_mode)) {
-        fprintf(stderr, "ERROR: cannot access EBPF kernel object: %s\n", filepath);
+        logMessage("ERROR: cannot access EBPF kernel object: %s\n", filepath);
         return false;
     }
 
@@ -404,38 +450,38 @@ bool connectRawSock(const ebpfTelemetryConfig *ebpfConfig)
 
     rawBpfObj = bpf_object__open_file(filepath, &openopts);
     if (libbpf_get_error(bpfObj)) {
-        fprintf(stderr, "ERROR: failed to open prog: %s '%s'\n", filepath, strerror(errno));
+        logMessage("ERROR: failed to open prog: %s '%s'\n", filepath, strerror(errno));
         return false;
     }
 
     rawBpfProg = bpf_object__find_program_by_name(rawBpfObj, "rawEBPFprog");
     if (rawBpfProg == NULL) {
-        fprintf(stderr, "ERROR: failed to locate program: %s '%s'\n", filepath, strerror(errno));
+        logMessage("ERROR: failed to locate program: %s '%s'\n", filepath, strerror(errno));
         return false;
     }
 
     bpf_program__set_type(rawBpfProg, BPF_PROG_TYPE_SOCKET_FILTER);
 
     if (bpf_object__load(rawBpfObj)) {
-        fprintf(stderr, "ERROR: failed to load prog: %s '%s'\n", filepath, strerror(errno));
+        logMessage("ERROR: failed to load prog: %s '%s'\n", filepath, strerror(errno));
         return false;
     }
 
     rawProgFd = bpf_program__fd(rawBpfProg);
 
     if (rawProgFd < 0) {
-        fprintf(stderr, "ERROR: failed to find prog: %s '%s'\n", filepath, strerror(errno));
+        logMessage("ERROR: failed to find prog: %s '%s'\n", filepath, strerror(errno));
         return false;
     }
 
     rawSock = socket(PF_PACKET, SOCK_RAW | SOCK_NONBLOCK | SOCK_CLOEXEC, htons(ETH_P_ALL));
     if (rawSock < 0) {
-        fprintf(stderr, "ERROR: cannot open raw socket: '%s'\n", strerror(errno));
+        logMessage("ERROR: cannot open raw socket: '%s'\n", strerror(errno));
         return false;
     }
 
     if (setsockopt(rawSock, SOL_SOCKET, SO_ATTACH_BPF, &rawProgFd, sizeof(rawProgFd)) < 0) {
-        fprintf(stderr, "ERROR: setsockopt failed on raw socket: '%s'\n", strerror(errno));
+        logMessage("ERROR: setsockopt failed on raw socket: '%s'\n", strerror(errno));
         return false;
     }
 
@@ -452,7 +498,7 @@ bool connectRawSock(const ebpfTelemetryConfig *ebpfConfig)
 bool insertConfigOffsets(unsigned int *item, char *value)
 {
     if (item == NULL || value == NULL) {
-        fprintf(stderr, "insertConfigOffsets invalid params\n");
+        logMessage("insertConfigOffsets invalid params\n");
         return false;
     }
 
@@ -490,7 +536,7 @@ bool populateConfigOffsets(ebpfConfig *c, const char *argv[],
         time_t procStartTime)
 {
     if (c == NULL || argv == NULL) {
-        fprintf(stderr, "populateConfigOffsets invalid params\n");
+        logMessage("populateConfigOffsets invalid params\n");
         return false;
     }
 
@@ -509,15 +555,15 @@ bool populateConfigOffsets(ebpfConfig *c, const char *argv[],
         config = fopen(CONFIG_FILE, "r");
         if (!config) {
             if (searchOffsets(&c->offsets)) {
-                fprintf(stderr, "Discovery process: from database\n");
+                logMessage("Discovery process: from database\n");
                 return true;
             }
 
-            fprintf(stderr, "Discovery process: auto discovery\n");
+            logMessage("Discovery process: auto discovery\n");
             return (discoverOffsets(&c->offsets, argv, procStartTime) == E_EBPF_SUCCESS);
         }
 
-        fprintf(stderr, "Discovery process: getOffsets\n");
+        logMessage("Discovery process: getOffsets\n");
 
         while ((readLen = getline(&line, &len, config)) >= 0) {
             if (readLen > 0 && line[0] == '#')
@@ -547,7 +593,7 @@ bool populateConfigOffsets(ebpfConfig *c, const char *argv[],
     }
     else
     {
-        fprintf(stderr, "Discovery process: BTF-CORE\n");
+        logMessage("Discovery process: BTF-CORE\n");
     }
 
     return true;
@@ -579,14 +625,14 @@ uint32_t getKernelVersion()
     struct utsname              unameStruct = {{ 0 }};
 
     if (uname(&unameStruct)){
-        fprintf(stderr, "Couldn't find uname, '%s'\n", strerror(errno));
+        logMessage("Couldn't find uname, '%s'\n", strerror(errno));
         return 0;
     }
 
     if (sscanf(unameStruct.release, "%u.%u", &major, &minor) == 2){
-        fprintf(stderr, "Found Kernel version: %u.%u\n", major, minor);
+        logMessage("Found Kernel version: %u.%u\n", major, minor);
     } else {
-        fprintf(stderr, "Couldn't find version\n");
+        logMessage("Couldn't find version\n");
         return 0;
     }
 
@@ -604,7 +650,7 @@ const ebpfTelemetryObject *getObjectAndPath(char *filepath,
         unsigned int size, const ebpfTelemetryConfig *ebpfConfig)
 {
     if (filepath == NULL || ebpfConfig == NULL) {
-        fprintf(stderr, "getObjectAndPath invalid params\n");
+        logMessage("getObjectAndPath invalid params\n");
         return NULL;
     }
 
@@ -629,7 +675,7 @@ const ebpfTelemetryObject *getObjectAndPath(char *filepath,
     }
 
     if (filename == NULL) {
-        fprintf(stderr, "Kernel version not supported\n");
+        logMessage("Kernel version not supported\n");
         return NULL;
     }
 
@@ -641,7 +687,7 @@ const ebpfTelemetryObject *getObjectAndPath(char *filepath,
         }
     }
 
-    fprintf(stderr, "Cannot locate EBPF kernel object: %s\n", filename);
+    logMessage("Cannot locate EBPF kernel object: %s\n", filename);
     return NULL;
 }
 
@@ -656,7 +702,7 @@ const ebpfTelemetryObject *getObjectAndPath(char *filepath,
 bool locateTPprogs(const ebpfTelemetryObject *obj)
 {
     if (obj == NULL) {
-        fprintf(stderr, "locateTPprogs invalid params\n");
+        logMessage("locateTPprogs invalid params\n");
         return false;
     }
 
@@ -673,7 +719,7 @@ bool locateTPprogs(const ebpfTelemetryObject *obj)
             free (bpfSysExit);
             bpfSysExit = NULL;
         }
-        fprintf(stderr, "Cannot calloc\n");
+        logMessage("Cannot calloc\n");
         return false;
     }
 
@@ -702,7 +748,7 @@ bool locateTPprogs(const ebpfTelemetryObject *obj)
                 free( s->link);
                 s->link = NULL;
             }
-            fprintf(stderr, "Cannot calloc\n");
+            logMessage("Cannot calloc\n");
             return false;
         }
 
@@ -714,7 +760,7 @@ bool locateTPprogs(const ebpfTelemetryObject *obj)
             for (n=0; n<7; n++) {
                 programName[programNameLen - 1] = '0' + n;
                 if ((s->prog[n] = bpf_object__find_program_by_name(bpfObj, programName)) == NULL) {
-                    fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", programName, strerror(errno));
+                    logMessage("ERROR: failed to find program: '%s' '%s'\n", programName, strerror(errno));
                     free(programName);
                     return false;
                 }
@@ -724,7 +770,7 @@ bool locateTPprogs(const ebpfTelemetryObject *obj)
         } else {
             // attach this to specified enter tracepoint
             if ((s->prog[0] = bpf_object__find_program_by_name(bpfObj, p->program)) == NULL) {
-                fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
+                logMessage("ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
                 return false;
             }
             bpf_program__set_type(s->prog[0], BPF_PROG_TYPE_TRACEPOINT);
@@ -755,12 +801,12 @@ bool locateTPprogs(const ebpfTelemetryObject *obj)
                 free( s->link);
                 s->link = NULL;
             }
-            fprintf(stderr, "Cannot calloc\n");
+            logMessage("Cannot calloc\n");
             return false;
         }
 
         if ((s->prog[0] = bpf_object__find_program_by_name(bpfObj, p->program)) == NULL) {
-            fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
+            logMessage("ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
             return false;
         }
         bpf_program__set_type(s->prog[0], BPF_PROG_TYPE_TRACEPOINT);
@@ -780,7 +826,7 @@ bool locateTPprogs(const ebpfTelemetryObject *obj)
 bool locateRTPprogs(const ebpfTelemetryObject *obj)
 {
     if (obj == NULL) {
-        fprintf(stderr, "locateRTPprogs invalid params\n");
+        logMessage("locateRTPprogs invalid params\n");
         return false;
     }
 
@@ -808,7 +854,7 @@ bool locateRTPprogs(const ebpfTelemetryObject *obj)
             free( bpfRawSysExitLink );
             bpfRawSysExitLink = NULL;
         }
-        fprintf(stderr, "Cannot calloc\n");
+        logMessage("Cannot calloc\n");
         return false;
     }
 
@@ -816,7 +862,7 @@ bool locateRTPprogs(const ebpfTelemetryObject *obj)
     for (i=0; i<numRawSysEnter; i++) {
         const ebpfSyscallRTPprog *p = &obj->syscallRTPenterProgs[i];
         if ((bpfRawSysEnter[i] = bpf_object__find_program_by_name(bpfObj, p->program)) == NULL) {
-            fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
+            logMessage("ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
             return false;
         }
         bpf_program__set_type(bpfRawSysEnter[i], BPF_PROG_TYPE_RAW_TRACEPOINT);
@@ -825,7 +871,7 @@ bool locateRTPprogs(const ebpfTelemetryObject *obj)
     for (i=0; i<numRawSysExit; i++) {
         const ebpfSyscallRTPprog *p = &obj->syscallRTPexitProgs[i];
         if ((bpfRawSysExit[i] = bpf_object__find_program_by_name(bpfObj, p->program)) == NULL) {
-            fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
+            logMessage("ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
             return false;
         }
         bpf_program__set_type(bpfRawSysExit[i], BPF_PROG_TYPE_RAW_TRACEPOINT);
@@ -844,7 +890,7 @@ bool locateRTPprogs(const ebpfTelemetryObject *obj)
 bool locateOtherTPprogs(const ebpfTelemetryObject *obj)
 {
     if (obj == NULL) {
-        fprintf(stderr, "locateOtherTPprogs invalid params\n");
+        logMessage("locateOtherTPprogs invalid params\n");
         return false;
     }
 
@@ -861,14 +907,14 @@ bool locateOtherTPprogs(const ebpfTelemetryObject *obj)
             free( bpfOtherTpLink );
             bpfOtherTpLink = NULL;
         }
-        fprintf(stderr, "Cannot calloc\n");
+        logMessage("Cannot calloc\n");
         return false;
     }
 
     for (i=0; i<numOtherTp; i++) {
         const ebpfTracepointProg *p = &obj->otherTPprogs[i];
         if ((bpfOtherTp[i] = bpf_object__find_program_by_name(bpfObj, p->program)) == NULL) {
-            fprintf(stderr, "ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
+            logMessage("ERROR: failed to find program: '%s' '%s'\n", p->program, strerror(errno));
             return false;
         }
         bpf_program__set_type(bpfOtherTp[i], BPF_PROG_TYPE_TRACEPOINT);
@@ -890,7 +936,7 @@ bool populateConfig(ebpfConfig *config,
         time_t procStartTime)
 {
     if (config == NULL || obj == NULL || argv == NULL) {
-        fprintf(stderr, "populateConfig invalid params\n");
+        logMessage("populateConfig invalid params\n");
         return false;
     }
 
@@ -898,9 +944,9 @@ bool populateConfig(ebpfConfig *config,
     config->bootNsSinceEpoch = g_bootSecSinceEpoch * (1000 * 1000 * 1000);
     memcpy(config->active, obj->activeSyscalls, sizeof(config->active));
     if (!populateConfigOffsets(config, argv, procStartTime)) {
-        fprintf(stderr, "Could not automatically discover kernel offsets.\n");
-        fprintf(stderr, "Build and run the get_offsets module to generate the offsets config file:\n");
-        fprintf(stderr, "/opt/sysinternalsEBPF/sysinternalsEBPF_offsets.conf\n\n");
+        logMessage("Could not automatically discover kernel offsets.\n");
+        logMessage("Build and run the get_offsets module to generate the offsets config file:\n");
+        logMessage("/opt/sysinternalsEBPF/sysinternalsEBPF_offsets.conf\n\n");
         return false;
     }
     return true;
@@ -918,7 +964,7 @@ bool linkTPprogs(const ebpfTelemetryObject *obj,
         const bool *activeSyscalls)
 {
     if (obj == NULL || activeSyscalls == NULL) {
-        fprintf(stderr, "linkTPprogs invalid params\n");
+        logMessage("linkTPprogs invalid params\n");
         return false;
     }
 
@@ -992,7 +1038,7 @@ bool linkRTPprogs(const ebpfTelemetryObject *obj,
         const bool *activeSyscalls)
 {
     if (obj == NULL || activeSyscalls == NULL) {
-        fprintf(stderr, "linkRTPprogs invalid params\n");
+        logMessage("linkRTPprogs invalid params\n");
         return false;
     }
 
@@ -1013,7 +1059,7 @@ bool linkRTPprogs(const ebpfTelemetryObject *obj,
         if ((prev == NULL || !alreadyAttached) && (p->syscall == EBPF_GENERIC_SYSCALL || activeSyscalls[p->syscall])) {
             bpfRawSysEnterLink[i] = bpf_program__attach_raw_tracepoint(bpfRawSysEnter[i], "sys_enter");
             if (libbpf_get_error(bpfRawSysEnterLink[i])) {
-                fprintf(stderr, "Cannot link\n");
+                logMessage("Cannot link\n");
                 return false;
             }
             alreadyAttached = true;
@@ -1031,7 +1077,7 @@ bool linkRTPprogs(const ebpfTelemetryObject *obj,
         if ((prev == NULL || !alreadyAttached) && (p->syscall == EBPF_GENERIC_SYSCALL || activeSyscalls[p->syscall])) {
             bpfRawSysExitLink[i] = bpf_program__attach_raw_tracepoint(bpfRawSysExit[i], "sys_exit");
             if (libbpf_get_error(bpfRawSysExitLink[i])) {
-                fprintf(stderr, "Cannot link\n");
+                logMessage("Cannot link\n");
                 return false;
             }
             alreadyAttached = true;
@@ -1054,7 +1100,7 @@ bool linkOtherTPprogs(const ebpfTelemetryObject *obj,
         const bool *activeSyscalls)
 {
     if (obj == NULL || activeSyscalls == NULL) {
-        fprintf(stderr, "linkOtherTPprogs invalid params\n");
+        logMessage("linkOtherTPprogs invalid params\n");
         return false;
     }
 
@@ -1082,7 +1128,7 @@ bool linkOtherTPprogs(const ebpfTelemetryObject *obj,
                 activeSyscalls[p->pseudoSyscall])) {
             bpfOtherTpLink[i] = bpf_program__attach_tracepoint(bpfOtherTp[i], p->family, p->tracepoint);
             if (libbpf_get_error(bpfOtherTpLink[i])) {
-                fprintf(stderr, "Cannot link\n");
+                logMessage("Cannot link\n");
                 return false;
             }
             alreadyAttached = true;
@@ -1103,7 +1149,7 @@ bool populateOtherMaps(int *fds, const unsigned int numMapObjects,
         const ebpfTelemetryMapObject *mapObjects)
 {
     if (fds == NULL || mapObjects == NULL) {
-        fprintf(stderr, "populateOtherMaps invalid params\n");
+        logMessage("populateOtherMaps invalid params\n");
         return false;
     }
 
@@ -1113,14 +1159,14 @@ bool populateOtherMaps(int *fds, const unsigned int numMapObjects,
         // find the named map
         fds[i] = bpf_object__find_map_fd_by_name(bpfObj, mapObjects[i].name);
         if (fds[i] <= 0) {
-            fprintf(stderr, "ERROR: failed to load map_fd for map '%s': '%s'\n", mapObjects[i].name, strerror(errno));
+            logMessage("ERROR: failed to load map_fd for map '%s': '%s'\n", mapObjects[i].name, strerror(errno));
             return false;
         }
 
         // populate the map
         for (j=0; j<mapObjects[i].numElements; j++) {
             if (bpf_map_update_elem(fds[i], mapObjects[i].keys[j], mapObjects[i].values[j], BPF_ANY)) {
-                fprintf(stderr, "ERROR: failed to set map element %d for map '%s': '%s'\n",
+                logMessage("ERROR: failed to set map element %d for map '%s': '%s'\n",
                         j, mapObjects[i].name, strerror(errno));
                 return false;
             }
@@ -1140,7 +1186,7 @@ bool populateOtherMaps(int *fds, const unsigned int numMapObjects,
 long telemetryMapLookupElem(int fd, const void *key, void *value)
 {
     if (key == NULL || value == NULL) {
-        fprintf(stderr, "telemetryMapLookupElem invalid params\n");
+        logMessage("telemetryMapLookupElem invalid params\n");
         return -1;
     }
 
@@ -1157,7 +1203,7 @@ long telemetryMapLookupElem(int fd, const void *key, void *value)
 long telemetryMapUpdateElem(int fd, const void *key, const void *value, ebpfUpdateMapMode mode)
 {
     if (key == NULL || value == NULL) {
-        fprintf(stderr, "telemetryMapUpdateElem invalid params\n");
+        logMessage("telemetryMapUpdateElem invalid params\n");
         return -1;
     }
 
@@ -1186,7 +1232,7 @@ long telemetryMapUpdateElem(int fd, const void *key, const void *value, ebpfUpda
 long telemetryMapDeleteElem(int fd, const void *key)
 {
     if (key == NULL) {
-        fprintf(stderr, "telemetryMapDeleteElem invalid params\n");
+        logMessage("telemetryMapDeleteElem invalid params\n");
         return -1;
     }
 
@@ -1221,12 +1267,12 @@ void checkPerfErrors()
         if (bpf_map_lookup_elem(perfErrorsMapFd, &readIndex.index, &item) >= 0) {
             curTimeSec = g_bootSecSinceEpoch + (item.time / (1000 * 1000 * 1000));
             if (gmtime_r(&curTimeSec, &timeFields)) {
-                fprintf(stderr, "Perf Ring Buffer Error: %ld @ %04u-%02u-%02uT%02u:%02u:%02uZ\n",
+                logMessage("Perf Ring Buffer Error: %ld @ %04u-%02u-%02uT%02u:%02u:%02uZ\n",
                     item.error,
                     timeFields.tm_year + 1900, timeFields.tm_mon + 1, timeFields.tm_mday,
                     timeFields.tm_hour, timeFields.tm_min, timeFields.tm_sec);
             } else {
-                fprintf(stderr, "Perf Ring Buffer Error: %ld\n", item.error);
+                logMessage("Perf Ring Buffer Error: %ld\n", item.error);
             }
         }
         readIndex.index = (readIndex.index + 1) & (PERF_ERRORS_MAX - 1);
@@ -1243,7 +1289,8 @@ void checkPerfErrors()
 //--------------------------------------------------------------------
 static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
 {
-	return vfprintf(stderr, format, args);
+    logCallback(format, args);
+    return 0;
 }
 
 //--------------------------------------------------------------------
@@ -1267,7 +1314,7 @@ int ebpfStart(
 {
     if (ebpfConfig == NULL || filepath == NULL || eventCb == NULL || eventsLostCb == NULL
             || argv == NULL || fds == NULL) {
-        fprintf(stderr, "ebpfStart invalid params\n");
+        logMessage("ebpfStart invalid params\n");
         return E_EBPF_INVALIDPARAMS;
     }
 
@@ -1293,7 +1340,7 @@ int ebpfStart(
 
     bpfObj = bpf_object__open_file(filepath, &openopts);
     if (libbpf_get_error(bpfObj)) {
-        fprintf(stderr, "ERROR: failed to open prog: %s '%s'\n", filepath, strerror(errno));
+        logMessage("ERROR: failed to open prog: %s '%s'\n", filepath, strerror(errno));
         return E_EBPF_NOPROG;
     }
 
@@ -1317,26 +1364,26 @@ int ebpfStart(
     }
 
     if (bpf_object__load(bpfObj)) {
-        fprintf(stderr, "ERROR: failed to load prog: '%s'\n", strerror(errno));
+        logMessage("ERROR: failed to load prog: '%s'\n", strerror(errno));
         return E_EBPF_NOLOAD;
     }
 
     // locate maps
     eventMapFd = bpf_object__find_map_fd_by_name(bpfObj, "eventMap");
     if (eventMapFd <= 0) {
-        fprintf(stderr, "ERROR: failed to load eventMapFd: '%s'\n", strerror(errno));
+        logMessage("ERROR: failed to load eventMapFd: '%s'\n", strerror(errno));
         return E_EBPF_NOMAP;
     }
 
     configMapFd = bpf_object__find_map_fd_by_name(bpfObj, "configMap");
     if (configMapFd <= 0) {
-        fprintf(stderr, "ERROR: failed to load configMapFd: '%s'\n", strerror(errno));
+        logMessage("ERROR: failed to load configMapFd: '%s'\n", strerror(errno));
         return E_EBPF_NOMAP;
     }
 
     perfErrorsMapFd = bpf_object__find_map_fd_by_name(bpfObj, "perfErrorsMap");
     if (perfErrorsMapFd <= 0) {
-        fprintf(stderr, "ERROR: failed to load perfErrorsMapFd: '%s'\n", strerror(errno));
+        logMessage("ERROR: failed to load perfErrorsMapFd: '%s'\n", strerror(errno));
         return E_EBPF_NOMAP;
     }
 
@@ -1348,7 +1395,7 @@ int ebpfStart(
     }
 
     if (bpf_map_update_elem(configMapFd, &configEntry, &config, BPF_ANY)) {
-        fprintf(stderr, "ERROR: failed to set config: '%s'\n", strerror(errno));
+        logMessage("ERROR: failed to set config: '%s'\n", strerror(errno));
         return E_EBPF_MAPUPDATEFAIL;
     }
 
@@ -1356,20 +1403,20 @@ int ebpfStart(
     perfIndexIndex = PERF_ERRORS_READ_INDEX;
     perfIndex.index = 0;
     if (bpf_map_update_elem(perfErrorsMapFd, &perfIndexIndex, &perfIndex, BPF_ANY)) {
-        fprintf(stderr, "ERROR: failed to set perf error read index: '%s'\n", strerror(errno));
+        logMessage("ERROR: failed to set perf error read index: '%s'\n", strerror(errno));
         return E_EBPF_MAPUPDATEFAIL;
     }
 
     perfIndexIndex = PERF_ERRORS_WRITE_INDEX;
     perfIndex.index = 0;
     if (bpf_map_update_elem(perfErrorsMapFd, &perfIndexIndex, &perfIndex, BPF_ANY)) {
-        fprintf(stderr, "ERROR: failed to set perf error write index: '%s'\n", strerror(errno));
+        logMessage("ERROR: failed to set perf error write index: '%s'\n", strerror(errno));
         return E_EBPF_MAPUPDATEFAIL;
     }
 
     // populate other maps
     if (!populateOtherMaps(fds, ebpfConfig->numMapObjects, ebpfConfig->mapObjects)) {
-        fprintf(stderr, "ERROR: failed to populate other maps\n");
+        logMessage("ERROR: failed to populate other maps\n");
         return E_EBPF_MAPUPDATEFAIL;
     }
 
@@ -1377,7 +1424,7 @@ int ebpfStart(
     pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, eventCb, (EventLostCallback_u64 *)eventsLostCb, context, /*&pbOpts*/ NULL); // param 2 is page_cnt == number of pages to mmap.
     ret = libbpf_get_error(pb);
     if (ret) {
-        fprintf(stderr, "ERROR: failed to setup perf_buffer: %d\n", ret);
+        logMessage("ERROR: failed to setup perf_buffer: %d\n", ret);
         return E_EBPF_NORB;
     }
 
@@ -1401,7 +1448,7 @@ int ebpfStart(
     // enable raw socket if required
     if (ebpfConfig->enableRawSockCapture) {
         if (!connectRawSock(ebpfConfig)) {
-            fprintf(stderr, "ERROR: failed to enable raw socket capture\n");
+            logMessage("ERROR: failed to enable raw socket capture\n");
             return E_EBPF_NORAWSOCK;
         }
     }
@@ -1471,7 +1518,6 @@ int telemetryStart(
     if (ebpfConfig == NULL || eventCb == NULL || eventsLostCb == NULL ||
             telemetryReady == NULL || telemetryReloadConfig == NULL ||
             argv == NULL || fds == NULL) {
-        fprintf(stderr, "telemetryStart invalid params\n");
         return E_EBPF_INVALIDPARAMS;
     }
 
@@ -1497,7 +1543,7 @@ int telemetryStart(
 
     rawTracepoints = object->rawSyscallTracepoints;
 
-    fprintf(stderr, "Using EBPF object: %s\n", filepath);
+    logMessage("Using EBPF object: %s\n", filepath);
 
     setrlimit(RLIMIT_MEMLOCK, &lim);
 
@@ -1516,7 +1562,7 @@ int telemetryStart(
     //
     signal(SIGHUP, telemetrySignalInterrupt);
 
-    fprintf(stderr, "Running...\n");
+    logMessage("Running...\n");
 
     telemetryReady();
 
@@ -1528,15 +1574,15 @@ int telemetryStart(
             // no events means we timed out
             timeouts++;
             if (timeouts > RESTART_TIMEOUT) {
-                fprintf(stderr, "Event timeout occurred (no event for %d seconds). Reloading eBPF...\n", RESTART_TIMEOUT);
+                logMessage("Event timeout occurred (no event for %d seconds). Reloading eBPF...\n", RESTART_TIMEOUT);
                 timeouts = 0;
                 telemetryCloseAll();
                 if (ebpfStart(ebpfConfig, filepath, procStartTime, eventCb, eventsLostCb, context, argv, fds, true)
                         != E_EBPF_SUCCESS) {
-                    fprintf(stderr, "ebpfStart failed\n");
+                    logMessage("ebpfStart failed\n");
                     break;
                 }
-                fprintf(stderr, "Reloaded eBPF due to event timeout\n");
+                logMessage("Reloaded eBPF due to event timeout\n");
                 continue;
             }
         } else if (ret > 0) {
@@ -1558,6 +1604,11 @@ int telemetryStart(
         if (isTesting) {
             if (i++ > STOPLOOP) break;
         }
+        if(telemetryCancelled)
+        {
+            break;
+        }
+
         checkPerfErrors();
     }
 

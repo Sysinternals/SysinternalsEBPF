@@ -123,8 +123,6 @@ add_library(sysinternalsEBPF SHARED
             unameOffsets.c
             installer.c
             syscalls.h
-            hexdump.c
-            hexdump.h
             )
 
 add_definitions("-fPIC")

@@ -121,7 +121,7 @@ uint32_t        memSizes[MAX_MEM_DUMP_TYPE];
 static void memDumpEventCb(void *ctx, int cpu, void *data, __u32 size)
 {
     if (data == NULL) {
-        fprintf(stderr, "memDumpEventCb invalid params\n");
+        logMessage("memDumpEventCb invalid params\n");
         return;
     }
 
@@ -133,7 +133,7 @@ static void memDumpEventCb(void *ctx, int cpu, void *data, __u32 size)
         }
         memDumps[d->type] = (char *)malloc(d->size);
         if (memDumps[d->type] == NULL) {
-            fprintf(stderr, "Out of memory\n");
+            logMessage("Out of memory\n");
             exit(1);
         }
         memcpy(memDumps[d->type], d->data, d->size);
@@ -230,7 +230,7 @@ unsigned int align(unsigned int offset, unsigned int a,
 uint16_t get16(enum memDumpType type, uint32_t offset)
 {
     if (offset >= memSizes[type]) {
-        fprintf(stderr, "get16 invalid params\n");
+        logMessage("get16 invalid params\n");
         return 0;
     }
 
@@ -248,7 +248,7 @@ uint16_t get16(enum memDumpType type, uint32_t offset)
 uint32_t get32(enum memDumpType type, uint32_t offset)
 {
     if (offset >= memSizes[type]) {
-        fprintf(stderr, "get32 invalid params\n");
+        logMessage("get32 invalid params\n");
         return 0;
     }
 
@@ -266,7 +266,7 @@ uint32_t get32(enum memDumpType type, uint32_t offset)
 uint64_t get64(enum memDumpType type, uint32_t offset)
 {
     if (offset >= memSizes[type]) {
-        fprintf(stderr, "get64 invalid params\n");
+        logMessage("get64 invalid params\n");
         return 0;
     }
 
@@ -315,7 +315,7 @@ bool searchUint16(unsigned int *out, enum direction dir,
         uint16_t target, uint16_t diff)
 {
     if (out == NULL) {
-        fprintf(stderr, "searchUint16 invalid params\n");
+        logMessage("searchUint16 invalid params\n");
         return false;
     }
 
@@ -352,7 +352,7 @@ bool searchUint32(unsigned int *out, enum direction dir,
         uint32_t target, uint32_t diff)
 {
     if (out == NULL) {
-        fprintf(stderr, "searchUint32 invalid params\n");
+        logMessage("searchUint32 invalid params\n");
         return false;
     }
 
@@ -389,7 +389,7 @@ bool searchUint64(unsigned int *out, enum direction dir,
         uint64_t target, uint64_t diff)
 {
     if (out == NULL) {
-        fprintf(stderr, "searchUint64 invalid params\n");
+        logMessage("searchUint64 invalid params\n");
         return false;
     }
 
@@ -425,7 +425,7 @@ bool searchPtr(unsigned int *out, enum direction dir,
         enum memDumpType type, uint32_t startOffset, uint32_t numElem)
 {
     if (out == NULL) {
-        fprintf(stderr, "searchPtr invalid params\n");
+        logMessage("searchPtr invalid params\n");
         return false;
     }
 
@@ -445,7 +445,7 @@ bool searchStr(unsigned int *out, enum direction dir,
         const char *target)
 {
     if (out == NULL || target == NULL) {
-        fprintf(stderr, "searchStr invalid params\n");
+        logMessage("searchStr invalid params\n");
         return false;
     }
 
@@ -487,7 +487,7 @@ bool setConfigPid(pid_t pid, enum memDumpType type, const void *addr,
     config.size = size;
 
     if (bpf_map_update_elem(configMapFd, &configEntry, &config, BPF_ANY)) {
-        fprintf(stderr, "ERROR: failed to set config: '%s'\n", strerror(errno));
+        logMessage("ERROR: failed to set config: '%s'\n", strerror(errno));
         return false;
     }
     return true;
@@ -604,20 +604,20 @@ bool searchDerefUint32(unsigned int *out, enum direction dir,
         uint32_t secondOffset, uint32_t target, uint32_t diff)
 {
     if (out == NULL || pb == NULL) {
-        fprintf(stderr, "searchDerefUint32 invalid params\n");
+        logMessage("searchDerefUint32 invalid params\n");
         return false;
     }
 
     unsigned int off[2];
 
     if (!searchPtr(off, dir, from, startOffset, numElem)) {
-        fprintf(stderr, "Did not find pointer\n");
+        logMessage("Did not find pointer\n");
         return false;
     }
 
     if (memDumps[to] == NULL) {
         if (!dumpStruct(to, (void *)get64(from, off[0]), DUMP_SIZE, pb)) {
-            fprintf(stderr, "Did not get struct memory\n");
+            logMessage("Did not get struct memory\n");
             return false;
         }
     }
@@ -644,15 +644,15 @@ void printOffset(const char *name, const unsigned int *o, int num)
 {
 #if 0
     if (name == NULL || o == NULL) {
-        fprintf(stderr, "printOffset invalid params\n");
+        logMessage("printOffset invalid params\n");
         return;
     }
 
-    fprintf(stderr, "%s = ", name);
+    logMessage("%s = ", name);
     for (int i=0; i<num; i++) {
-        fprintf(stderr, "%d, ", o[i]);
+        logMessage("%d, ", o[i]);
     }
-    fprintf(stderr, "\n");
+    logMessage("\n");
 #endif
 }
 
@@ -666,7 +666,7 @@ void printOffset(const char *name, const unsigned int *o, int num)
 bool getPidOffset(Offsets *offsets, struct perf_buffer *pb)
 {
     if (offsets == NULL || pb == NULL) {
-        fprintf(stderr, "getPidOffset invalid params\n");
+        logMessage("getPidOffset invalid params\n");
         return false;
     }
 
@@ -676,7 +676,7 @@ bool getPidOffset(Offsets *offsets, struct perf_buffer *pb)
         offsets->pid[0] += sizeof(uint32_t);
         printOffset("pid", offsets->pid, 2);
     } else {
-        fprintf(stderr, "pid offset not found\n");
+        logMessage("pid offset not found\n");
         return false;
     }
 
@@ -689,7 +689,7 @@ bool getPidOffset(Offsets *offsets, struct perf_buffer *pb)
         printOffset("ppid", offsets->ppid, 3);
         return true;
     } else {
-        fprintf(stderr, "parent offset not found\n");
+        logMessage("parent offset not found\n");
         return false;
     }
 }
@@ -704,7 +704,7 @@ bool getPidOffset(Offsets *offsets, struct perf_buffer *pb)
 bool getStartTimeOffset(Offsets *offsets, time_t procStartTime)
 {
     if (offsets == NULL) {
-        fprintf(stderr, "getStartTimeOffset invalid params\n");
+        logMessage("getStartTimeOffset invalid params\n");
         return false;
     }
 
@@ -721,7 +721,7 @@ bool getStartTimeOffset(Offsets *offsets, time_t procStartTime)
         printOffset("start_time", offsets->start_time, 2);
         return true;
     } else {
-        fprintf(stderr, "start_time offset not found\n");
+        logMessage("start_time offset not found\n");
         return false;
     }
 }
@@ -736,7 +736,7 @@ bool getStartTimeOffset(Offsets *offsets, time_t procStartTime)
 bool getCommOffset(Offsets *offsets, const char *comm)
 {
     if (offsets == NULL || comm == NULL) {
-        fprintf(stderr, "getCommOffset invalid params\n");
+        logMessage("getCommOffset invalid params\n");
         return false;
     }
 
@@ -749,7 +749,7 @@ bool getCommOffset(Offsets *offsets, const char *comm)
         printOffset("comm", offsets->comm, 2);
         return true;
     } else {
-        fprintf(stderr, "comm offset not found\n");
+        logMessage("comm offset not found\n");
         return false;
     }
 }
@@ -764,7 +764,7 @@ bool getCommOffset(Offsets *offsets, const char *comm)
 bool getCredsOffsets(Offsets *offsets, struct perf_buffer *pb)
 {
     if (offsets == NULL || pb == NULL) {
-        fprintf(stderr, "getCredOffsets invalid param\n");
+        logMessage("getCredOffsets invalid param\n");
         return false;
     }
 
@@ -780,7 +780,7 @@ bool getCredsOffsets(Offsets *offsets, struct perf_buffer *pb)
     uint64_t startOffset = offsets->comm[0] - sizeof(uint64_t);
     while (offsets->cred[0] == -1) {
         if (!searchPtr(offsets->cred, backwards, task, startOffset, 32)) {
-            fprintf(stderr, "cred offset not found\n");
+            logMessage("cred offset not found\n");
             return false;
         }
         if (get64(task, offsets->cred[0]) != get64(task, offsets->cred[0] - sizeof(uint64_t))) {
@@ -791,7 +791,7 @@ bool getCredsOffsets(Offsets *offsets, struct perf_buffer *pb)
     if (offsets->cred[0] != -1) {
         printOffset("cred", offsets->cred, 2);
     } else {
-        fprintf(stderr, "cred offset not found\n");
+        logMessage("cred offset not found\n");
         return false;
     }
 
@@ -807,7 +807,7 @@ bool getCredsOffsets(Offsets *offsets, struct perf_buffer *pb)
 
     pid_t child = fork();
     if (child == -1) {
-        fprintf(stderr, "Cannot fork to get cred struct\n");
+        logMessage("Cannot fork to get cred struct\n");
         return false;
     }
 
@@ -815,20 +815,20 @@ bool getCredsOffsets(Offsets *offsets, struct perf_buffer *pb)
         // set child process creds to known values and trigger EBPF program
         if(setgid(TEMPGID) < 0)
         {
-            fprintf(stderr, "Failed in call to setgid\n");
+            logMessage("Failed in call to setgid\n");
             exit(1);
         }
 
         if(setuid(TEMPUID) < 0)
         {
-            fprintf(stderr, "Failed in call to setuid\n");
+            logMessage("Failed in call to setuid\n");
             exit(1);
         }
 
         // create semaphore
         sem = sem_open(SEM_NAME, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 0);
         if (sem == SEM_FAILED) {
-            fprintf(stderr, "Child cannot create semaphore\n");
+            logMessage("Child cannot create semaphore\n");
             exit(1);
         }
         sem_wait(sem);
@@ -844,26 +844,26 @@ bool getCredsOffsets(Offsets *offsets, struct perf_buffer *pb)
     }
 
     if (!setConfigPid(child, task, 0, DUMP_SIZE)) {
-        fprintf(stderr, "Cannot set config for child for task\n");
+        logMessage("Cannot set config for child for task\n");
         return false;
     }
 
     sem_post(sem);
 
     if (!getMem(task, pb)) {
-        fprintf(stderr, "Did not get child task struct\n");
+        logMessage("Did not get child task struct\n");
         return false;
     }
 
     if (!setConfigPid(child, cred, (void *)get64(task, offsets->cred[0]), DUMP_SIZE)) {
-        fprintf(stderr, "Cannot set config for child for cred\n");
+        logMessage("Cannot set config for child for cred\n");
         return false;
     }
 
     sem_post(sem);
 
     if (!getMem(cred, pb)) {
-        fprintf(stderr, "Did not get child cred struct\n");
+        logMessage("Did not get child cred struct\n");
         return false;
     }
 
@@ -915,7 +915,7 @@ bool getPwdPathOffset(Offsets *offsets, struct perf_buffer *pb,
         size_t commLen)
 {
     if (offsets == NULL || pb == NULL) {
-        fprintf(stderr, "getPwdPathOffset invalid params\n");
+        logMessage("getPwdPathOffset invalid params\n");
         return false;
     }
 
@@ -935,7 +935,7 @@ bool getPwdPathOffset(Offsets *offsets, struct perf_buffer *pb,
     offsets->pwd_path[0] = startOffset;
 
     if (!dumpStruct(fs, (void *)get64(task, startOffset), DUMP_SIZE, pb)) {
-        fprintf(stderr, "Could not dump fs struct\n");
+        logMessage("Could not dump fs struct\n");
         return false;
     }
 
@@ -950,16 +950,16 @@ bool getPwdPathOffset(Offsets *offsets, struct perf_buffer *pb,
             offsets->pwd_path[1] = offsets->pwd_path[1] + (2 * sizeof(uint64_t));
             printOffset("pwd_path", offsets->pwd_path, 3);
         }  else {
-            fprintf(stderr, "pwd_path offset not found (1)\n");
-            fprintf(stderr, "pwd_path[0] = %d\n", offsets->pwd_path[0]);
-            fprintf(stderr, "0 = 0x%016lx\n", get64(fs, offsets->pwd_path[1]));
-            fprintf(stderr, "1 = 0x%016lx\n", get64(fs, offsets->pwd_path[1] + sizeof(uint64_t)));
-            fprintf(stderr, "2 = 0x%016lx\n", get64(fs, offsets->pwd_path[1] + (2 * sizeof(uint64_t))));
-            fprintf(stderr, "3 = 0x%016lx\n", get64(fs, offsets->pwd_path[1] + (3 * sizeof(uint64_t))));
+            logMessage("pwd_path offset not found (1)\n");
+            logMessage("pwd_path[0] = %d\n", offsets->pwd_path[0]);
+            logMessage("0 = 0x%016lx\n", get64(fs, offsets->pwd_path[1]));
+            logMessage("1 = 0x%016lx\n", get64(fs, offsets->pwd_path[1] + sizeof(uint64_t)));
+            logMessage("2 = 0x%016lx\n", get64(fs, offsets->pwd_path[1] + (2 * sizeof(uint64_t))));
+            logMessage("3 = 0x%016lx\n", get64(fs, offsets->pwd_path[1] + (3 * sizeof(uint64_t))));
             return false;
         }
     } else {
-        fprintf(stderr, "pwd_path offset not found (2)\n");
+        logMessage("pwd_path offset not found (2)\n");
         return false;
     }
 
@@ -980,7 +980,7 @@ bool getPwdPathOffset(Offsets *offsets, struct perf_buffer *pb,
 bool getDentryNameOffset(Offsets *offsets, struct perf_buffer *pb)
 {
     if (offsets == NULL || pb == NULL) {
-        fprintf(stderr, "getDentryNameOffset invalid params\n");
+        logMessage("getDentryNameOffset invalid params\n");
         return false;
     }
 
@@ -989,7 +989,7 @@ bool getDentryNameOffset(Offsets *offsets, struct perf_buffer *pb)
     }
 
     if (!dumpStruct(dentry, (void *)get64(fs, offsets->pwd_path[1] + offsets->path_dentry[0]), DUMP_SIZE, pb)) {
-        fprintf(stderr, "Could not dump dentry struct\n");
+        logMessage("Could not dump dentry struct\n");
         return false;
     }
 
@@ -1008,7 +1008,7 @@ bool getDentryNameOffset(Offsets *offsets, struct perf_buffer *pb)
         if (offsets->dentry_name[0] != -1) {
             // check it is the name
             if (!dumpStruct(pwd, (void *)get64(dentry, offsets->dentry_name[0]), DUMP_SIZE, pb)) {
-                fprintf(stderr, "Could not dump pwd\n");
+                logMessage("Could not dump pwd\n");
                 return false;
             }
             if (strcmp(sysinternalsEBPFtmp, memDumps[pwd]) == 0) {
@@ -1016,15 +1016,15 @@ bool getDentryNameOffset(Offsets *offsets, struct perf_buffer *pb)
                 printOffset("dentry_name", offsets->dentry_name, 2);
                 return true;
             } else {
-                fprintf(stderr, "dentry_name offset not found\n");
+                logMessage("dentry_name offset not found\n");
                 return false;
             }
         } else {
-            fprintf(stderr, "dentry_name offset not found\n");
+            logMessage("dentry_name offset not found\n");
             return false;
         }
     } else {
-        fprintf(stderr, "dentry_name offset not found\n");
+        logMessage("dentry_name offset not found\n");
         return false;
     }
 }
@@ -1039,7 +1039,7 @@ bool getDentryNameOffset(Offsets *offsets, struct perf_buffer *pb)
 bool getDentryParentOffset(Offsets *offsets)
 {
     if (offsets == NULL) {
-        fprintf(stderr, "getDentryParentOffset invalid params\n");
+        logMessage("getDentryParentOffset invalid params\n");
         return false;
     }
 
@@ -1053,7 +1053,7 @@ bool getDentryParentOffset(Offsets *offsets)
         printOffset("dentry_parent", offsets->dentry_parent, 2);
         return true;
     } else {
-        fprintf(stderr, "dentry_parent offset not found\n");
+        logMessage("dentry_parent offset not found\n");
         return false;
     }
 }
@@ -1068,7 +1068,7 @@ bool getDentryParentOffset(Offsets *offsets)
 bool getDentryInodeOffsets(Offsets *offsets, struct perf_buffer *pb)
 {
     if (offsets == NULL || pb == NULL) {
-        fprintf(stderr, "getDentryInodeOffsets invalid params\n");
+        logMessage("getDentryInodeOffsets invalid params\n");
         return false;
     }
 
@@ -1081,12 +1081,12 @@ bool getDentryInodeOffsets(Offsets *offsets, struct perf_buffer *pb)
             (memSizes[dentry] - offsets->dentry_name[0] - sizeof(uint64_t)) / sizeof(uint64_t))) {
         printOffset("dentry_inode", offsets->dentry_inode, 2);
     } else {
-        fprintf(stderr, "dentry_inode offset not found\n");
+        logMessage("dentry_inode offset not found\n");
         return false;
     }
 
     if (!dumpStruct(inode, (void *)get64(dentry, offsets->dentry_inode[0]), DUMP_SIZE, pb)) {
-        fprintf(stderr, "Could not dump inode struct\n");
+        logMessage("Could not dump inode struct\n");
         return false;
     }
 
@@ -1095,7 +1095,7 @@ bool getDentryInodeOffsets(Offsets *offsets, struct perf_buffer *pb)
             __S_IFDIR | TEMPDIR_MODE, 0)) {
         printOffset("inode_mode", offsets->inode_mode, 2);
     } else {
-        fprintf(stderr, "inode_mode offset not found\n");
+        logMessage("inode_mode offset not found\n");
         return false;
     }
 
@@ -1104,7 +1104,7 @@ bool getDentryInodeOffsets(Offsets *offsets, struct perf_buffer *pb)
             TEMPUID, 0)) {
         printOffset("inode_ouid", offsets->inode_ouid, 2);
     } else {
-        fprintf(stderr, "inode_ouid offset not found\n");
+        logMessage("inode_ouid offset not found\n");
         return false;
     }
 
@@ -1113,7 +1113,7 @@ bool getDentryInodeOffsets(Offsets *offsets, struct perf_buffer *pb)
             TEMPGID, 0)) {
         printOffset("inode_ogid", offsets->inode_ogid, 2);
     } else {
-        fprintf(stderr, "inode_ogid offset not found\n");
+        logMessage("inode_ogid offset not found\n");
         return false;
     }
 
@@ -1122,7 +1122,7 @@ bool getDentryInodeOffsets(Offsets *offsets, struct perf_buffer *pb)
             creation_time, 1)) {
         printOffset("inode_atime", offsets->inode_atime, 2);
     } else {
-        fprintf(stderr, "inode_atime offset not found\n");
+        logMessage("inode_atime offset not found\n");
         return false;
     }
 
@@ -1131,7 +1131,7 @@ bool getDentryInodeOffsets(Offsets *offsets, struct perf_buffer *pb)
             memSizes[inode] / sizeof(uint64_t), creation_time, 1)) {
         printOffset("inode_mtime", offsets->inode_mtime, 2);
     } else {
-        fprintf(stderr, "inode_mtime offset not found\n");
+        logMessage("inode_mtime offset not found\n");
         return false;
     }
 
@@ -1140,7 +1140,7 @@ bool getDentryInodeOffsets(Offsets *offsets, struct perf_buffer *pb)
             memSizes[inode] / sizeof(uint64_t), creation_time, 1)) {
         printOffset("inode_ctime", offsets->inode_ctime, 2);
     } else {
-        fprintf(stderr, "inode_ctime offset not found\n");
+        logMessage("inode_ctime offset not found\n");
         return false;
     }
 
@@ -1157,7 +1157,7 @@ bool getDentryInodeOffsets(Offsets *offsets, struct perf_buffer *pb)
 bool getMountOffsets(Offsets *offsets, struct perf_buffer *pb)
 {
     if (offsets == NULL || pb == NULL) {
-        fprintf(stderr, "getMountOffsets invalid params\n");
+        logMessage("getMountOffsets invalid params\n");
         return false;
     }
 
@@ -1171,7 +1171,7 @@ bool getMountOffsets(Offsets *offsets, struct perf_buffer *pb)
     // (all vfsmount structs live inside a mount struct)
     if (!dumpStruct(mount, (void *)get64(fs, offsets->pwd_path[1] + offsets->path_vfsmount[0]) - 512,
             DUMP_SIZE, pb)) {
-        fprintf(stderr, "Could not dump mount struct\n");
+        logMessage("Could not dump mount struct\n");
         return false;
     }
 
@@ -1179,12 +1179,12 @@ bool getMountOffsets(Offsets *offsets, struct perf_buffer *pb)
     // is the parent mount struct pointer, and two before that are hash list pointers
     if (!searchPtr(offsets->mount_mountpoint, backwards, mount, 512 - sizeof(uint64_t),
             512 - sizeof(uint64_t))) {
-        fprintf(stderr, "mount_mountpoint offset not found\n");
+        logMessage("mount_mountpoint offset not found\n");
         return false;
     }
 
     if (!dumpStruct(dentryMountpoint, (void *)get64(mount, offsets->mount_mountpoint[0]), DUMP_SIZE, pb)) {
-        fprintf(stderr, "Could not dump parent dentry struct\n");
+        logMessage("Could not dump parent dentry struct\n");
         return false;
     }
 
@@ -1194,20 +1194,20 @@ bool getMountOffsets(Offsets *offsets, struct perf_buffer *pb)
         if (c == 0x00) {
             break;
         } else if (c < ' ' || c > '~') {
-            fprintf(stderr, "mount_mountpoint offset not found\n");
+            logMessage("mount_mountpoint offset not found\n");
             return false;
         }
     }
 
     if (startOffset == offsets->dentry_iname[0] + 128) {
-        fprintf(stderr, "mount_mountpoint offset not found\n");
+        logMessage("mount_mountpoint offset not found\n");
         return false;
     }
 
     // search backwards for mount parent
     if (!searchPtr(offsets->mount_parent, backwards, mount, offsets->mount_mountpoint[0] - sizeof(uint64_t),
             offsets->mount_mountpoint[0] - sizeof(uint64_t))) {
-        fprintf(stderr, "mount_parent offset not found\n");
+        logMessage("mount_parent offset not found\n");
         return false;
     }
 
@@ -1232,7 +1232,7 @@ bool getMountOffsets(Offsets *offsets, struct perf_buffer *pb)
 bool getFdOffsets(Offsets *offsets, struct perf_buffer *pb)
 {
     if (offsets == NULL || pb == NULL) {
-        fprintf(stderr, "getFdOffsets invalid params\n");
+        logMessage("getFdOffsets invalid params\n");
         return false;
     }
 
@@ -1242,12 +1242,12 @@ bool getFdOffsets(Offsets *offsets, struct perf_buffer *pb)
 
     // after the fs struct pointer in the task struct comes the pointer to the files struct
     if (!searchPtr(offsets->max_fds, forwards, task, offsets->pwd_path[0] + sizeof(uint64_t), 32)) {
-        fprintf(stderr, "max_fds offset not found\n");
+        logMessage("max_fds offset not found\n");
         return false;
     }
 
     if (!dumpStruct(files, (void *)get64(task, offsets->max_fds[0]), DUMP_SIZE, pb)) {
-        fprintf(stderr, "Could not dump files struct\n");
+        logMessage("Could not dump files struct\n");
         return false;
     }
 
@@ -1259,7 +1259,7 @@ bool getFdOffsets(Offsets *offsets, struct perf_buffer *pb)
     }
 
     if (startOffset == 128) {
-        fprintf(stderr, "max_fds fdt offset not found\n");
+        logMessage("max_fds fdt offset not found\n");
         return false;
     }
 
@@ -1294,7 +1294,7 @@ bool getFdOffsets(Offsets *offsets, struct perf_buffer *pb)
 bool getTtyOffset(Offsets *offsets, struct perf_buffer *pb)
 {
     if (offsets == NULL || pb == NULL) {
-        fprintf(stderr, "getTtyOffset invalid params\n");
+        logMessage("getTtyOffset invalid params\n");
         return false;
     }
 
@@ -1312,24 +1312,24 @@ bool getTtyOffset(Offsets *offsets, struct perf_buffer *pb)
         }
     }
     if (startOffset == 4096) {
-        fprintf(stderr, "tty offset not found (1)\n");
+        logMessage("tty offset not found (1)\n");
         return false;
     }
 
     // search backward for next pointer (sighand)
     if (!searchPtr(offsets->tty, backwards, task, startOffset - sizeof(uint64_t), 32)) {
-        fprintf(stderr, "tty offset not found (2)\n");
+        logMessage("tty offset not found (2)\n");
         return false;
     }
 
     // search backward for next pointer (signal struct)
     if (!searchPtr(offsets->tty, backwards, task, offsets->tty[0] - sizeof(uint64_t), 32)) {
-        fprintf(stderr, "tty offset not found (3)\n");
+        logMessage("tty offset not found (3)\n");
         return false;
     }
 
     if (!dumpStruct(signals, (void *)get64(task, offsets->tty[0]), DUMP_SIZE, pb)) {
-        fprintf(stderr, "Could not dump signal struct\n");
+        logMessage("Could not dump signal struct\n");
         return false;
     }
 
@@ -1348,7 +1348,7 @@ bool getTtyOffset(Offsets *offsets, struct perf_buffer *pb)
     }
 
     if (startOffset == 2048) {
-        fprintf(stderr, "tty offset not found (4)\n");
+        logMessage("tty offset not found (4)\n");
         return false;
     }
 
@@ -1360,7 +1360,7 @@ bool getTtyOffset(Offsets *offsets, struct perf_buffer *pb)
     // pointer to the tty struct.
     unsigned int off[4];
     if (!searchUint64(off, backwards, signals, startOffset - sizeof(uint64_t), 16, 1, 0)) {
-        fprintf(stderr, "tty offset not found (5)\n");
+        logMessage("tty offset not found (5)\n");
         return false;
     }
 
@@ -1387,7 +1387,7 @@ bool getTtyOffset(Offsets *offsets, struct perf_buffer *pb)
 bool getAuidOffset(Offsets *offsets)
 {
     if (offsets == NULL) {
-        fprintf(stderr, "getAuidOffset invalid params\n");
+        logMessage("getAuidOffset invalid params\n");
         return false;
     }
 
@@ -1430,7 +1430,7 @@ bool getAuidOffset(Offsets *offsets)
                 }
                 printOffset("ses", offsets->ses, 2);
             } else {
-                fprintf(stderr, "ses offset not found\n");
+                logMessage("ses offset not found\n");
                 return false;
             }
 
@@ -1439,7 +1439,7 @@ bool getAuidOffset(Offsets *offsets)
                 printOffset("auid", offsets->auid, 2);
                 return true;
             } else {
-                fprintf(stderr, "auid offset not found\n");
+                logMessage("auid offset not found\n");
                 return false;
             }
         }
@@ -1457,7 +1457,7 @@ bool getAuidOffset(Offsets *offsets)
 bool getMmOffsets(Offsets *offsets, struct perf_buffer *pb, const char *argv[])
 {
     if (offsets == NULL || pb == NULL || argv == NULL) {
-        fprintf(stderr, "getMmOffsets invalid params\n");
+        logMessage("getMmOffsets invalid params\n");
         return false;
     }
 
@@ -1471,7 +1471,7 @@ bool getMmOffsets(Offsets *offsets, struct perf_buffer *pb, const char *argv[])
     // search backwards from the PID to find the pdeath_signal we set earlier
 
     if (!searchUint32(pdeath, backwards, task, offsets->pid[0] - (2 * sizeof(uint32_t)), 128, PDEATH_SIG, 0)) {
-        fprintf(stderr, "pdeath offset not found\n");
+        logMessage("pdeath offset not found\n");
         return false;
     }
 
@@ -1485,7 +1485,7 @@ bool getMmOffsets(Offsets *offsets, struct perf_buffer *pb, const char *argv[])
     }
 
     if (startOffset == 0) {
-        fprintf(stderr, "mm offset not found\n");
+        logMessage("mm offset not found\n");
         return false;
     }
 
@@ -1493,7 +1493,7 @@ bool getMmOffsets(Offsets *offsets, struct perf_buffer *pb, const char *argv[])
             startOffset - sizeof(uint64_t);
 
     if (!dumpStruct(mm, (void *)get64(task, offsets->mm_arg_start[0]), DUMP_SIZE, pb)) {
-        fprintf(stderr, "Could not dump mm struct\n");
+        logMessage("Could not dump mm struct\n");
         return false;
     }
 
@@ -1501,7 +1501,7 @@ bool getMmOffsets(Offsets *offsets, struct perf_buffer *pb, const char *argv[])
     if (searchUint64(&offsets->mm_arg_start[1], forwards, mm, 0, 128, (uint64_t)argv[0], 0)) {
         printOffset("mm_arg_start", offsets->mm_arg_start, 2);
     } else {
-        fprintf(stderr, "mm_arg_start offset not found\n");
+        logMessage("mm_arg_start offset not found\n");
         return false;
     }
 
@@ -1522,7 +1522,7 @@ bool getMmOffsets(Offsets *offsets, struct perf_buffer *pb, const char *argv[])
         offsets->mm_start_code[1] = startOffset - (3 * sizeof(uint64_t));
     printOffset("mm_start_code", offsets->mm_start_code, 3);
     } else {
-        fprintf(stderr, "mm_start_code offset not found\n");
+        logMessage("mm_start_code offset not found\n");
         return false;
     }
 
@@ -1543,7 +1543,7 @@ bool getMmOffsets(Offsets *offsets, struct perf_buffer *pb, const char *argv[])
 bool getExePathOffset(Offsets *offsets, struct perf_buffer *pb, const char *comm)
 {
     if (offsets == NULL || pb == NULL || comm == NULL) {
-        fprintf(stderr, "getExePathOffset invalid params\n");
+        logMessage("getExePathOffset invalid params\n");
         return false;
     }
 
@@ -1556,13 +1556,13 @@ bool getExePathOffset(Offsets *offsets, struct perf_buffer *pb, const char *comm
     }
 
     if (readlink(EXEPATH_FILE, exePath, PATH_MAX) <= 0) {
-        fprintf(stderr, "Cannot read exe link\n");
+        logMessage("Cannot read exe link\n");
         return false;
     }
 
     exe = strrchr(exePath, '/');
     if (exe == NULL) {
-        fprintf(stderr, "Cannot find exe name\n");
+        logMessage("Cannot find exe name\n");
         return false;
     }
 
@@ -1589,18 +1589,18 @@ bool getExePathOffset(Offsets *offsets, struct perf_buffer *pb, const char *comm
                 startOffset += sizeof(uint64_t)) {
             if (isPointer(get64(mm, startOffset))) {
                 if (!dumpStruct(exeFile, (void *)get64(mm, startOffset), DUMP_SIZE, pb)) {
-                    fprintf(stderr, "Could not dump exe_file struct\n");
+                    logMessage("Could not dump exe_file struct\n");
                     return false;
                 }
                 uint64_t dentry = get64(exeFile, offsets->fd_path[0] + offsets->path_dentry[0]);
                 if (isPointer(dentry)) {
                     if (!dumpStruct(exeDentry, (void *)dentry, DUMP_SIZE, pb)) {
-                        fprintf(stderr, "Could not dump exe_dentry struct\n");
+                        logMessage("Could not dump exe_dentry struct\n");
                         return false;
                     }
                     uint64_t exe_dname = get64(exeDentry, offsets->dentry_name[0]);
                     if (!dumpStruct(exeName, (void *)exe_dname, DUMP_SIZE, pb)) {
-                        fprintf(stderr, "Could not dump exe_name\n");
+                        logMessage("Could not dump exe_name\n");
                         return false;
                     }
                     if (strcmp(exe, memDumps[exeName]) == 0) {
@@ -1626,13 +1626,13 @@ bool getExePathOffset(Offsets *offsets, struct perf_buffer *pb, const char *comm
 void triggerSkb(int fd, struct sockaddr *saddr, size_t len)
 {
     if (fd <= 0 || saddr == NULL) {
-        fprintf(stderr, "triggerSkb invalid params\n");
+        logMessage("triggerSkb invalid params\n");
         return;
     }
 
     char buf[] = "A";
     if (sendto(fd, buf, 1, 0, saddr, len) < 0) {
-        fprintf(stderr, "Could not send UDP packet\n");
+        logMessage("Could not send UDP packet\n");
     }
 }
 
@@ -1646,7 +1646,7 @@ void triggerSkb(int fd, struct sockaddr *saddr, size_t len)
 bool getSkbOffsets(Offsets *offsets, struct perf_buffer *pb)
 {
     if (offsets == NULL || pb == NULL) {
-        fprintf(stderr, "getSkbOffsts invalid params\n");
+        logMessage("getSkbOffsts invalid params\n");
         return false;
     }
 
@@ -1658,7 +1658,7 @@ bool getSkbOffsets(Offsets *offsets, struct perf_buffer *pb)
 
     fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd < 0) {
-        fprintf(stderr, "Could not create socket\n");
+        logMessage("Could not create socket\n");
         return false;
     }
     memset(&saddr, 0, sizeof(saddr));
@@ -1671,7 +1671,7 @@ bool getSkbOffsets(Offsets *offsets, struct perf_buffer *pb)
     triggerSkb(fd, (struct sockaddr *)&saddr, sizeof(saddr));
 
     if (!getMem(skb, pb)) {
-        fprintf(stderr, "Did not receive skb memory dump\n");
+        logMessage("Did not receive skb memory dump\n");
         return false;
     }
 
@@ -1682,7 +1682,7 @@ bool getSkbOffsets(Offsets *offsets, struct perf_buffer *pb)
             setConfig(skdata, (const void *)(uint64_t)startOffset, 36);
             triggerSkb(fd, (struct sockaddr *)&saddr, sizeof(saddr));
             if (!getMem(skdata, pb)) {
-                fprintf(stderr, "Did not receive skdata memory dump\n");
+                logMessage("Did not receive skdata memory dump\n");
                 return false;
             }
             if (memcmp(&memDumps[skdata][28], localhostx2, sizeof(localhostx2)) == 0) {
@@ -1697,13 +1697,13 @@ bool getSkbOffsets(Offsets *offsets, struct perf_buffer *pb)
                     printOffset("skb_network_header", offsets->skb_network_header, 2);
                     return true;
                 } else {
-                    fprintf(stderr, "Did not find skb network_header\n");
+                    logMessage("Did not find skb network_header\n");
                     return false;
                 }
             }
         }
     }
-    fprintf(stderr, "Did not find packet data in skb\n");
+    logMessage("Did not find packet data in skb\n");
     return false;
 }
 
@@ -1722,7 +1722,7 @@ int getOffsets(
     )
 {
     if (offsets == NULL || argv == NULL || pb == NULL) {
-        fprintf(stderr, "getOffsets invalid params\n");
+        logMessage("getOffsets invalid params\n");
         return E_DISC_CATASTROPHIC;
     }
 
@@ -1737,7 +1737,7 @@ int getOffsets(
         fclose(fp);
     }
     if (commLen == 0) {
-        fprintf(stderr, "Could not read comm\n");
+        logMessage("Could not read comm\n");
         return E_DISC_GET_COMM;
     }
     comm[commLen] = 0x00;
@@ -1747,7 +1747,7 @@ int getOffsets(
     }
 
     if (strlen(comm) == 0) {
-        fprintf(stderr, "Comm is empty\n");
+        logMessage("Comm is empty\n");
         return E_DISC_GET_COMM;
     }
 
@@ -1785,7 +1785,7 @@ int discoverOffsets(
     )
 {
     if (offsets == NULL || argv == NULL) {
-        fprintf(stderr, "discoverOffsets invalid params\n");
+        logMessage("discoverOffsets invalid params\n");
         return E_DISC_CATASTROPHIC;
     }
 
@@ -1805,7 +1805,7 @@ int discoverOffsets(
     memset(offsets, 0xFF, sizeof(*offsets));
 
     if (setsid() < 0) {
-        fprintf(stderr, "sedsid() failed.\n");
+        logMessage("sedsid() failed.\n");
         return E_DISC_CATASTROPHIC;
     }
 
@@ -1815,18 +1815,18 @@ int discoverOffsets(
     signal(SIGCHLD, SIG_IGN);
 
     if (uname(&unameStruct) ) {
-        fprintf(stderr, "Couldn't find uname, '%s'\n", strerror(errno));
+        logMessage("Couldn't find uname, '%s'\n", strerror(errno));
         return E_DISC_CATASTROPHIC;
     }
 
     if (sscanf(unameStruct.release, "%u.%u", &major, &minor) != 2) {
-        fprintf(stderr, "Couldn't find version\n");
+        logMessage("Couldn't find version\n");
         return E_DISC_CATASTROPHIC;
     }
 
     // <  4.15, no ebpf support due to no direct r/w access to maps
     if ((major < 4) || (major == 4 && minor < 15)) {
-        fprintf(stderr, "Kernel Version %u.%u not supported\n", major, minor);
+        logMessage("Kernel Version %u.%u not supported\n", major, minor);
         return E_DISC_NOTSUPPORTED;
     }
 
@@ -1840,17 +1840,17 @@ int discoverOffsets(
 
     bpfObj = bpf_object__open(filepath);
     if (libbpf_get_error(bpfObj)) {
-        fprintf(stderr, "ERROR: failed to open prog: '%s'\n", strerror(errno));
+        logMessage("ERROR: failed to open prog: '%s'\n", strerror(errno));
         return E_DISC_NOPROG;
     }
 
     if ((bpfSysExit = bpf_object__find_program_by_name(bpfObj,"sys_exit_uname")) == NULL) {
-        fprintf(stderr, "ERROR: failed to find program: 'sys_exit_uname' '%s'\n", strerror(errno));
+        logMessage("ERROR: failed to find program: 'sys_exit_uname' '%s'\n", strerror(errno));
         return E_DISC_NOPROG;
     }
 
     if ((bpfConsumeSkb = bpf_object__find_program_by_name(bpfObj,"consume_skb")) == NULL) {
-        fprintf(stderr, "ERROR: failed to find program: 'consume_skb' '%s'\n", strerror(errno));
+        logMessage("ERROR: failed to find program: 'consume_skb' '%s'\n", strerror(errno));
         return E_DISC_NOPROG;
     }
 
@@ -1858,19 +1858,19 @@ int discoverOffsets(
     bpf_program__set_type(bpfConsumeSkb, BPF_PROG_TYPE_TRACEPOINT);
 
     if (bpf_object__load(bpfObj)) {
-        fprintf(stderr, "ERROR: failed to load prog: '%s'\n", strerror(errno));
+        logMessage("ERROR: failed to load prog: '%s'\n", strerror(errno));
         return E_DISC_NOPROG;
     }
 
     eventMapFd = bpf_object__find_map_fd_by_name(bpfObj, "eventMap");
     if (eventMapFd <= 0) {
-        fprintf(stderr, "ERROR: failed to load eventMapFd: '%s'\n", strerror(errno));
+        logMessage("ERROR: failed to load eventMapFd: '%s'\n", strerror(errno));
         return E_DISC_NOMAP;
     }
 
     configMapFd = bpf_object__find_map_fd_by_name(bpfObj, "memDumpConfigMap");
     if (configMapFd <= 0) {
-        fprintf(stderr, "ERROR: failed to load configMapFd: '%s'\n", strerror(errno));
+        logMessage("ERROR: failed to load configMapFd: '%s'\n", strerror(errno));
         return E_DISC_NOMAP;
     }
 
@@ -1887,11 +1887,11 @@ int discoverOffsets(
     pb = perf_buffer__new(eventMapFd, MAP_PAGE_SIZE, memDumpEventCb, NULL, NULL, NULL); // param 2 is page_cnt == number of pages to mmap.
     ret = libbpf_get_error(pb);
     if (ret) {
-        fprintf(stderr, "ERROR: failed to setup perf_buffer: %d\n", ret);
+        logMessage("ERROR: failed to setup perf_buffer: %d\n", ret);
         return E_DISC_NORB;
     }
 
-    fprintf(stderr, "Discovering offsets...");
+    logMessage("Discovering offsets...");
 
     // move to a temporary directory for use in later checks
     if (getcwd(cwd, sizeof(cwd)) == NULL) {
@@ -1900,13 +1900,13 @@ int discoverOffsets(
     mkdir(tmpdir, TEMPDIR_MODE);
     if(chdir(tmpdir) == -1 )
     {
-        fprintf(stderr, "ERROR: Failed to change directories: %s\n", tmpdir);
+        logMessage("ERROR: Failed to change directories: %s\n", tmpdir);
         return E_DISC_CATASTROPHIC;
     }
 
     if(chown(tmpdir, TEMPUID, TEMPGID) == -1)
     {
-        fprintf(stderr, "ERROR: Failed to change ownership: %s\n", tmpdir);
+        logMessage("ERROR: Failed to change ownership: %s\n", tmpdir);
         return E_DISC_CATASTROPHIC;
     }
 
@@ -1917,30 +1917,30 @@ int discoverOffsets(
 
     // set PDEATH signal for later use as a canary
     if(prctl(PR_SET_PDEATHSIG, PDEATH_SIG) < 0) {
-        fprintf(stderr, "prctl failed\n");
+        logMessage("prctl failed\n");
         return E_DISC_NOPDEATH;
     }
 
     triggerTp();
 
     if (!getMem(task, pb)) {
-        fprintf(stderr, "Did not get task_struct\n");
+        logMessage("Did not get task_struct\n");
         return E_DISC_NOTASK;
     }
 
     ret = getOffsets(offsets, argv, pb, procStartTime);
 
     if (ret == E_EBPF_SUCCESS) {
-        fprintf(stderr, "done\n");
+        logMessage("done\n");
     } else {
-        fprintf(stderr, "\nGet Offsets Error: %s\n", eBPFstrerror(ret));
+        logMessage("\nGet Offsets Error: %s\n", eBPFstrerror(ret));
     }
 
     memDumpCloseAll();
 
     if(chdir(cwd) == -1)
     {
-        fprintf(stderr, "ERROR: Failed to change directories: %s\n", cwd);
+        logMessage("ERROR: Failed to change directories: %s\n", cwd);
         return E_DISC_CATASTROPHIC;
     }
 
