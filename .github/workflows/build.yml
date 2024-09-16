@@ -1,0 +1,30 @@
+name: Build SysinternalsEBPF
+on: [push, pull_request]
+jobs:
+  build_SysinternalsEBPF:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository code
+      uses: actions/checkout@v2
+    - name: Update repos
+      run: sudo apt update
+    - name: Install dependencies
+      run: sudo apt -y install build-essential gcc g++ make cmake libelf-dev llvm clang libzstd1 git libjson-glib-dev
+    - name: Run cmake
+      run: cmake -S . -B build
+    - name: Build
+      working-directory: build
+      run: make
+    - name: Build Packages
+      working-directory: build
+      run: make packages
+    - name: Upload Build Artifacts (deb)
+      uses: actions/upload-artifact@v2
+      with:
+        name: sysinternalsebpf.deb
+        path: build/deb/sysinternalsebpf*.deb
+    - name: Upload Build Artifacts (rpm)
+      uses: actions/upload-artifact@v2
+      with:
+        name: sysinternalsebpf.rpm
+        path: build/rpm/sysinternalsebpf*.rpm
